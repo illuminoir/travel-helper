@@ -1,0 +1,16 @@
+{
+  "name": "api-server",
+  "version": "1.0.0",
+  "description": "This is a simple crud api server.",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "nodemon": "^2.0.22",
+  }
+}
