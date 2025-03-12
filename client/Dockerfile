@@ -17,6 +17,7 @@ COPY . .
 RUN npm run build
 
 ENV PORT=3000
+ENV GENERATE_SOURCEMAP=false
 
 # Expose port
 EXPOSE 3000
