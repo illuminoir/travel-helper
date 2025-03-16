@@ -40,17 +40,15 @@ services:
       - ./db/init_db.sql:/data/application/init_db.sql
     networks:
       - mynetwork
-  client:
+  client-next:
     build:
-      context: ./client
-    volumes:
-      - ./client:/app
-    command: npm start
+      context: ./client-next  # ✅ This tells Docker to use the `client-next/` directory
+      dockerfile: Dockerfile  # ✅ Make sure it points to the right Dockerfile
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=development
-      - NODE_OPTIONS=--max-old-space-size=4096
+    volumes:
+      - ./client-next:/app  # ✅ Mount the correct directory
+    command: npm run start
 networks:
   mynetwork:
     driver: bridge
