@@ -12,8 +12,18 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
+      - name: Install Dependencies on client
         run: npm install
+        working-directory: client-next
 
-      - name: Build Project
+      - name: Build Project client
         run: npm run build
+        working-directory: client-next
+
+      - name: Install Dependencies on server
+        run: npm install
+        working-directory: api-server
+
+      - name: Build Project server
+        run: npm run build
+        working-directory: api-server
