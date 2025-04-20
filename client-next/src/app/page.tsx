@@ -53,7 +53,6 @@ export default function Home() {
         </div>
       </main> */}
       <Dashboard />
-      {console.log("allo")}
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"
@@ -69,7 +68,6 @@ export default function Home() {
             height={16}
           />
           Learn
-          {console.log("allo2")}
         </a>
         <a
           className="flex items-center gap-2 hover:underline hover:underline-offset-4"

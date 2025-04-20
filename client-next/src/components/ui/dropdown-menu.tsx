@@ -3,15 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function DropdownMenu() {
+    const menuRef = useRef<HTMLDivElement>(null);
     const [isOpen, setIsOpen] = useState(false);
-    const menuRef = useRef(null);
 
     useEffect(() => {
-        function handleClickOutside(event) {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
+        function handleClickOutside(event: MouseEvent) {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
                 setIsOpen(false);
             }
         }
+
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
@@ -19,7 +20,7 @@ export default function DropdownMenu() {
     }, []);
 
     return (
-        <div className="relative" ref={menuRef}>
+        <div ref={menuRef} className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
