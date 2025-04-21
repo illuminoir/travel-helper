@@ -25,5 +25,5 @@ jobs:
         working-directory: api-server
 
       - name: Build Project server
-        run: npm run build
+        run: npm run start
         working-directory: api-server
