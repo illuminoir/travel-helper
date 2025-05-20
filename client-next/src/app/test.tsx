@@ -14,24 +14,20 @@ export default function Dashboard() {
     };
 
     return (
-        <div className="w-full max-w-4xl mx-auto p-4 space-y-4">
-            {/* Navigation Bar */}
-            <div className="flex items-center justify-between space-x-2 border-b pb-2">
+        <div>
+            <div>
                 <DropdownMenu
-                    trigger={<Button variant="outline"><Menu className="w-5 h-5" /></Button>}
+                    trigger={<Button><Menu className="w-5 h-5" /></Button>}
                     items={["Page 1", "Page 2", "Page 3"]}
                 />
-                <Input placeholder="Filter" className="flex-1 max-w-xs" />
-                <Input placeholder="Search" className="flex-1 max-w-xs" />
-                <Button onClick={addItem} variant="outline">
-                    <Plus className="w-5 h-5" />
-                </Button>
+                <Input placeholder="Filter" />
+                <Input placeholder="Search" />
+                <Button onClick={addItem}><Plus className="w-5 h-5" /></Button>
             </div>
 
-            {/* Elements List */}
-            <div className="border rounded-lg p-4 space-y-2">
+            <div className="mt-4 border rounded p-4 space-y-2">
                 {items.map((item, index) => (
-                    <div key={index} className="border-b last:border-none py-2">
+                    <div key={index} className="border-b last:border-0 py-2">
                         {item}
                     </div>
                 ))}

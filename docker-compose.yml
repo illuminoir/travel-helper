@@ -46,9 +46,7 @@ services:
       dockerfile: Dockerfile  # ✅ Make sure it points to the right Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      - ./client-next:/app  # ✅ Mount the correct directory
-    command: npm run start
+    command: npm run dev
 networks:
   mynetwork:
     driver: bridge
