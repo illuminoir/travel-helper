@@ -68,13 +68,16 @@ const sampleItems = [
     },
 ]
 
+const res = await fetch("http://localhost:5001/api/items");
+const items = res.ok ? await res.json() : []
+
 export default function Component() {
     const [selectedPage, setSelectedPage] = useState("projects")
     const [filterText, setFilterText] = useState("")
     const [searchText, setSearchText] = useState("")
 
     // Filter and search logic
-    const filteredItems = sampleItems.filter((item) => {
+    const filteredItems = items.filter((item) => {
         const matchesFilter = filterText === "" || item.status.toLowerCase().includes(filterText.toLowerCase())
         const matchesSearch =
             searchText === "" ||
@@ -175,17 +178,17 @@ export default function Component() {
                                         <CardHeader className="pb-3">
                                             <div className="flex items-start justify-between">
                                                 <div className="flex-1">
-                                                    <CardTitle className="text-lg">{item.title}</CardTitle>
+                                                    <CardTitle className="text-lg">{item.name}</CardTitle>
                                                     <CardDescription className="mt-1">{item.description}</CardDescription>
                                                 </div>
-                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.name)}`}>
                           {item.status}
                         </span>
                                             </div>
                                         </CardHeader>
                                         <CardContent className="pt-0">
                                             <div className="flex items-center justify-between text-sm text-gray-500">
-                                                <span>Created: {item.date}</span>
+                                                <span>Weight: {item.weight}g</span>
                                                 <span>ID: #{item.id}</span>
                                             </div>
                                         </CardContent>
