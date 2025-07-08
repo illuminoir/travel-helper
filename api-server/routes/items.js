@@ -5,12 +5,42 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        const [rows] = await pool.query("SELECT * FROM travel_items");
-        res.json(rows);
+        const [items] = await pool.query("SELECT * FROM travel_items");
+
+        // Enrich each item with its tags
+        const enrichedItems = await Promise.all(
+            items.map(async (item) => {
+                // Get tag IDs from isTagged
+                const [tagLinks] = await pool.query(
+                    "SELECT tagId FROM isTagged WHERE itemId = ?",
+                    [item.id]
+                );
+
+                const tagIds = tagLinks.map(link => link.tagId);
+
+                let tags = [];
+                if (tagIds.length > 0) {
+                    const [tagRows] = await pool.query(
+                        `SELECT * FROM tags WHERE id IN (${tagIds.map(() => '?').join(',')})`,
+                        tagIds
+                    );
+                    tags = tagRows;
+                }
+
+                return {
+                    ...item,
+                    tags,
+                };
+            })
+        );
+
+        res.json(enrichedItems);
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: "Database error" });
     }
 });
+
 
 router.put("/", async (req, res) => {
     const { name, weight } = req.body;
