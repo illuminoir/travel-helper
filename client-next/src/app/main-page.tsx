@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, Search, Filter, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -19,6 +19,39 @@ export default function Component() {
     const [droppedItems, setDroppedItems] = useState<TravelItem[]>([])
     const [draggedItem, setDraggedItem] = useState<TravelItem | null>(null)
     const [isDragOver, setIsDragOver] = useState(false)
+
+    // Load state from localStorage on component mount
+    useEffect(() => {
+        const savedDroppedItems = localStorage.getItem("droppedItems")
+        if (savedDroppedItems) {
+            try {
+                const parsedItems = JSON.parse(savedDroppedItems)
+                setDroppedItems(parsedItems)
+            } catch (error) {
+                console.error("Error loading saved items:", error)
+            }
+        }
+    }, [])
+
+    // Auto-save to localStorage whenever droppedItems changes
+    useEffect(() => {
+        localStorage.setItem("droppedItems", JSON.stringify(droppedItems))
+    }, [droppedItems])
+
+    // Manual save function
+    const saveState = () => {
+        localStorage.setItem("droppedItems", JSON.stringify(droppedItems))
+        // You could add a toast notification here
+        alert("State saved successfully!")
+    }
+
+    // Clear all function
+    const clearAll = () => {
+        if (confirm("Are you sure you want to clear all dropped items?")) {
+            setDroppedItems([])
+            localStorage.removeItem("droppedItems")
+        }
+    }
 
     // Filter and search logic
     const filteredItems = items.filter((item: TravelItem) => {
@@ -134,6 +167,16 @@ export default function Component() {
                             <Plus className="h-4 w-4 mr-2" />
                             Add New Item
                         </Button>
+
+                        {/* Save and Clear Buttons */}
+                        <div className="flex gap-2">
+                            <Button variant="outline" onClick={saveState}>
+                                Save State
+                            </Button>
+                            <Button variant="outline" onClick={clearAll} disabled={droppedItems.length === 0}>
+                                Clear All
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -201,10 +244,15 @@ export default function Component() {
                         onDrop={handleDrop}
                     >
                         <div className="p-6 border-b flex-shrink-0">
-                            <h2 className="text-xl font-semibold">Drop Zone</h2>
-                            <p className="text-gray-600 text-sm mt-1">
-                                {droppedItems.length} {droppedItems.length === 1 ? "item" : "items"} dropped
-                            </p>
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <h2 className="text-xl font-semibold">Drop Zone</h2>
+                                    <p className="text-gray-600 text-sm mt-1">
+                                        {droppedItems.length} {droppedItems.length === 1 ? "item" : "items"} dropped
+                                    </p>
+                                </div>
+                                <div className="text-xs text-gray-500">Auto-saved</div>
+                            </div>
                         </div>
 
                         <div className="flex-1 overflow-y-auto">
