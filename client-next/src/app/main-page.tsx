@@ -1,13 +1,23 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, Filter, X } from "lucide-react"
+import { Plus, Search, Filter, X, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { TravelItem } from "@/types";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Label } from "@/components/ui/label"
 
 const res = await fetch("http://localhost:5001/api/items");
 const items = (res.ok ? await res.json() : []) as TravelItem[]
@@ -19,6 +29,9 @@ export default function Component() {
     const [droppedItems, setDroppedItems] = useState<TravelItem[]>([])
     const [draggedItem, setDraggedItem] = useState<TravelItem | null>(null)
     const [isDragOver, setIsDragOver] = useState(false)
+    const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [newItemName, setNewItemName] = useState("")
+    const [newItemWeight, setNewItemWeight] = useState("")
 
     // Load state from localStorage on component mount
     useEffect(() => {
@@ -52,6 +65,8 @@ export default function Component() {
             localStorage.removeItem("droppedItems")
         }
     }
+
+    console.log(items);
 
     // Filter and search logic
     const filteredItems = items.filter((item: TravelItem) => {
@@ -99,6 +114,60 @@ export default function Component() {
 
     const removeFromDropZone = (itemId: number) => {
         setDroppedItems((prev) => prev.filter((item) => item.id !== itemId))
+    }
+
+    const deleteItem = async (itemId: number) => {
+        if (confirm("Are you sure you want to delete this item permanently?")) {
+            // Remove from sampleItems array
+            const itemIndex = items.findIndex((item) => item.id === itemId)
+            if (itemIndex > -1) {
+                items.splice(itemIndex, 1)
+            }
+
+            try {
+                const res = await fetch(`http://localhost:5001/api/items/${itemId}`, {
+                    method: 'DELETE',
+                });
+
+                if (!res.ok) throw new Error(`Failed to delete item with id ${itemId}`);
+
+                const result = await res.json();
+                console.log('Item deleted: ', result);
+            } catch (err) {
+                console.error(err);
+            }
+
+            // Also remove from dropped items if it exists there
+            setDroppedItems((prev) => prev.filter((item) => item.id !== itemId))
+        }
+    }
+
+    // TODO review code and fix item adding
+    const handleAddNewItem = async () => {
+        if (newItemName.trim() && newItemWeight.trim()) {
+            try {
+                const res = await fetch(`http://localhost:5001/api/items`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: newItemName,
+                        weight: newItemWeight as number,
+                    }),
+                });
+
+                const result = await res.json();
+                console.log('Item created: ', result);
+            } catch (err) {
+                console.error(err);
+            }
+
+            // Reset form and close dialog
+            setNewItemName("")
+            setNewItemWeight("")
+            setIsDialogOpen(false)
+        }
     }
 
     const getStatusColor = (status: string) => {
@@ -162,11 +231,58 @@ export default function Component() {
                             />
                         </div>
 
-                        {/* Add Button */}
-                        <Button className="w-full sm:w-auto sm:ml-auto">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add New Item
-                        </Button>
+                        {/* Add Button with Dialog */}
+                        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="w-full sm:w-auto sm:ml-auto">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add New Item
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-[425px]">
+                                <DialogHeader>
+                                    <DialogTitle>Add New Item</DialogTitle>
+                                    <DialogDescription>
+                                        Create a new item with a name and weight. Click submit when you're done.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="name" className="text-right">
+                                            Name
+                                        </Label>
+                                        <Input
+                                            id="name"
+                                            value={newItemName}
+                                            onChange={(e) => setNewItemName(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="Enter item name..."
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="weight" className="text-right">
+                                            Weight
+                                        </Label>
+                                        <Input
+                                            id="weight"
+                                            value={newItemWeight}
+                                            onChange={(e) => setNewItemWeight(e.target.value)}
+                                            className="col-span-3"
+                                            placeholder="Enter weight..."
+                                        />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button
+                                        type="submit"
+                                        onClick={handleAddNewItem}
+                                        disabled={!newItemName.trim() || !newItemWeight.trim()}
+                                    >
+                                        Submit
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
 
                         {/* Save and Clear Buttons */}
                         <div className="flex gap-2">
@@ -216,9 +332,24 @@ export default function Component() {
                                                         <CardTitle className="text-lg">{item.name}</CardTitle>
                                                         <CardDescription className="mt-1">{item.tags?.map(tag => tag.name).join(", ")}</CardDescription>
                                                     </div>
-                                                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.name)}`}>
-                            {"TMP"}
-                          </span>
+                                                    <div className="flex items-center gap-2">
+                            <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.name)}`}
+                            >
+                              {item.name}
+                            </span>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                deleteItem(item.id)
+                                                            }}
+                                                            className="h-6 w-6 p-0 hover:bg-red-100"
+                                                        >
+                                                            <Trash2 className="h-3 w-3 text-red-500" />
+                                                        </Button>
+                                                    </div>
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="pt-0">
