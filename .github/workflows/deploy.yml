@@ -3,11 +3,35 @@ name: Next.js CI/CD
 on:
   push:
     branches:
-      - main  # Runs when pushing to main branch
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: traveldb
+          MYSQL_USER: admin
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USER: admin
+      DB_PASSWORD: password
+      DB_DATABASE: traveldb
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -24,15 +48,22 @@ jobs:
         run: npm install
         working-directory: api-server
 
+      - name: Wait for MySQL to be ready
+        run: |
+          echo "Waiting for MySQL..."
+          until mysqladmin ping -h 127.0.0.1 -uadmin -ppassword --silent; do
+            sleep 2
+          done
+
       - name: Start API Server
         env:
           PORT: 5001
-          DB_HOST: db
-          DB_PORT: 3306
-          DB_USER: admin
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_DATABASE: traveldb
-          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-          DATABASE_URL: ""
+        DB_HOST: db
+        DB_PORT: 3306
+        DB_USER: admin
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_DATABASE: traveldb
+        DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+        DATABASE_URL: ""
         run: npm run start
         working-directory: api-server
