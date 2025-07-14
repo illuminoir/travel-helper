@@ -61,9 +61,9 @@ jobs:
           DB_HOST: localhost
           DB_PORT: 3306
           DB_USER: admin
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_PASSWORD: password
           DB_DATABASE: traveldb
-          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          DB_ROOT_PASSWORD: password
           DATABASE_URL: ""
         run: npm run start
         working-directory: api-server
