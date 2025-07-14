@@ -14,9 +14,6 @@ services:
       - DATABASE_URL=${DATABASE_URL}
     ports:
       - 5001:5001
-    volumes:
-      - ./api-server:/app
-      - /app/node_modules
     networks:
       - mynetwork
   db:

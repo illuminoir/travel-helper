@@ -10,6 +10,8 @@ const pool = mysql.createPool({
     queueLimit: 0,
 });
 
+console.log(process.env)
+
 pool.query("SELECT 1")
     .then(() => console.log("✅ Connected to MySQL!"))
     .catch(err => console.error("❌ MySQL connection failed:", err));

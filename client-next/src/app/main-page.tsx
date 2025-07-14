@@ -19,10 +19,9 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 
-const res = await fetch("http://localhost:5001/api/items");
-const items = (res.ok ? await res.json() : []) as TravelItem[]
 
 export default function Component() {
+    const [items, setItems] = useState<TravelItem[]>([]);
     const [selectedPage, setSelectedPage] = useState("projects");
     const [filterText, setFilterText] = useState("");
     const [searchText, setSearchText] = useState("");
@@ -33,30 +32,12 @@ export default function Component() {
     const [newItemName, setNewItemName] = useState("")
     const [newItemWeight, setNewItemWeight] = useState("")
 
-    // Load state from localStorage on component mount
     useEffect(() => {
-        const savedDroppedItems = localStorage.getItem("droppedItems")
-        if (savedDroppedItems) {
-            try {
-                const parsedItems = JSON.parse(savedDroppedItems)
-                setDroppedItems(parsedItems)
-            } catch (error) {
-                console.error("Error loading saved items:", error)
-            }
-        }
-    }, [])
-
-    // Auto-save to localStorage whenever droppedItems changes
-    useEffect(() => {
-        localStorage.setItem("droppedItems", JSON.stringify(droppedItems))
-    }, [droppedItems])
-
-    // Manual save function
-    const saveState = () => {
-        localStorage.setItem("droppedItems", JSON.stringify(droppedItems))
-        // You could add a toast notification here
-        alert("State saved successfully!")
-    }
+        fetch('http://localhost:5001/api/items')
+            .then(res => res.json())
+            .then(setItems)
+            .catch(console.error);
+    }, []);
 
     // Clear all function
     const clearAll = () => {
@@ -65,8 +46,6 @@ export default function Component() {
             localStorage.removeItem("droppedItems")
         }
     }
-
-    console.log(items);
 
     // Filter and search logic
     const filteredItems = items.filter((item: TravelItem) => {
@@ -153,7 +132,7 @@ export default function Component() {
                     },
                     body: JSON.stringify({
                         name: newItemName,
-                        weight: newItemWeight as number,
+                        weight: newItemWeight as unknown as number,
                     }),
                 });
 
@@ -243,7 +222,7 @@ export default function Component() {
                                 <DialogHeader>
                                     <DialogTitle>Add New Item</DialogTitle>
                                     <DialogDescription>
-                                        Create a new item with a name and weight. Click submit when you're done.
+                                        Create a new item with a name and weight. Click submit when you are done.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <div className="grid gap-4 py-4">
@@ -286,9 +265,6 @@ export default function Component() {
 
                         {/* Save and Clear Buttons */}
                         <div className="flex gap-2">
-                            <Button variant="outline" onClick={saveState}>
-                                Save State
-                            </Button>
                             <Button variant="outline" onClick={clearAll} disabled={droppedItems.length === 0}>
                                 Clear All
                             </Button>
