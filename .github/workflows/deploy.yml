@@ -3,12 +3,11 @@ name: Next.js CI/CD
 on:
   push:
     branches:
-      - main
+      - main  # Runs when pushing to main branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -25,18 +24,15 @@ jobs:
         run: npm install
         working-directory: api-server
 
-      - name: Create .env file for server
-        run: |
-          echo "PORT=5001" >> .env
-          echo "DB_HOST=db" >> .env
-          echo "DB_PORT=3306" >> .env
-          echo "DB_USER=admin" >> .env
-          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-          echo "DB_DATABASE=traveldb" >> .env
-          echo "DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}" >> .env
-          echo "DATABASE_URL=" >> .env
-        working-directory: api-server
-
       - name: Start API Server
+        env:
+          PORT: 5001
+          DB_HOST: db
+          DB_PORT: 3306
+          DB_USER: admin
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: traveldb
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          DATABASE_URL: ""
         run: npm run start
         working-directory: api-server
