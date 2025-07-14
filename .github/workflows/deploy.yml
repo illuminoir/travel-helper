@@ -24,7 +24,3 @@ jobs:
       - name: Install Dependencies on server
         run: npm install
         working-directory: api-server
-
-      - name: Build API Server
-        run: npm run build
-        working-directory: api-server
