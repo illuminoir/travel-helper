@@ -58,12 +58,12 @@ jobs:
       - name: Start API Server
         env:
           PORT: 5001
-        DB_HOST: db
-        DB_PORT: 3306
-        DB_USER: admin
-        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        DB_DATABASE: traveldb
-        DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-        DATABASE_URL: ""
+          DB_HOST: db
+          DB_PORT: 3306
+          DB_USER: admin
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_DATABASE: traveldb
+          DB_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          DATABASE_URL: ""
         run: npm run start
         working-directory: api-server
