@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
+        console.log("getting");
         const [items] = await pool.query("SELECT * FROM travel_items");
 
         // Enrich each item with its tags
@@ -43,6 +44,7 @@ router.get("/", async (req, res) => {
 
 
 router.put("/", async (req, res) => {
+    console.log("in back");
     const { name, weight } = req.body;
 
     if (!name || typeof weight !== "number") {

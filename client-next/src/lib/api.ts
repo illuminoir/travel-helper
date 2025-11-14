@@ -1,0 +1,38 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+
+export interface Item {
+    id: string;
+    name: string;
+    weight: number;
+    category: string;
+}
+
+async function apiCall<T>(
+    endpoint: string,
+    options?: RequestInit
+): Promise<T> {
+    console.log(options);
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            ...options?.headers,
+        },
+        ...options,
+    });
+
+    if (!response.ok) {
+        throw new Error(`API error: ${response.statusText}`);
+    }
+
+    return response.json();
+}
+
+export const itemsApi = {
+    getAll: () => apiCall<Item[]>('/items'),
+    delete: (id: string) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
+    add: (name: string, weight: number, category: string) =>
+        apiCall<Item>('/items', {
+            method: 'PUT',
+            body: JSON.stringify({ name, weight, category }),
+        }),
+};
