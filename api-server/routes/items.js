@@ -5,7 +5,6 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        console.log("getting");
         const [items] = await pool.query("SELECT * FROM travel_items");
 
         // Enrich each item with its tags
