@@ -1,17 +1,11 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import {TravelItem} from "@/types";
 
-export interface Item {
-    id: string;
-    name: string;
-    weight: number;
-    category: string;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 async function apiCall<T>(
     endpoint: string,
     options?: RequestInit
 ): Promise<T> {
-    console.log(options);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
             'Content-Type': 'application/json',
@@ -28,11 +22,21 @@ async function apiCall<T>(
 }
 
 export const itemsApi = {
-    getAll: () => apiCall<Item[]>('/items'),
+    getAll: () => apiCall<TravelItem[]>('/items'),
     delete: (id: string) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
     add: (name: string, weight: number, category: string) =>
-        apiCall<Item>('/items', {
-            method: 'PUT',
+        apiCall<TravelItem>('/items', {
+            method: 'POST',
             body: JSON.stringify({ name, weight, category }),
+        }),
+    updateStatus: (id: string, status: 'available' | 'dropped') =>
+        apiCall<void>(`/items/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ status }),
+        }),
+    updateTags: (id: string, tags: string[]) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ tags }),
         }),
 };

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Item, itemsApi } from '@/lib/api';
+import { itemsApi } from '@/lib/api';
+import {TravelItem} from "@/types";
 
 export function useItems() {
-    const [items, setItems] = useState<Item[]>([]);
-    const [droppedItems, setDroppedItems] = useState<Item[]>([]);
+    const [items, setItems] = useState<TravelItem[]>([]);
+    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +17,7 @@ export function useItems() {
                 const apiItems = await itemsApi.getAll();
 
                 const saved = localStorage.getItem('droppedItems');
-                let droppedItemsData: Item[] = [];
+                let droppedItemsData: TravelItem[] = [];
 
                 if (saved) {
                     try {
@@ -26,7 +27,7 @@ export function useItems() {
                     }
                 }
 
-                const droppedIds = new Set(droppedItemsData.map((item: Item) => item.id));
+                const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id));
                 const availableItems = apiItems.filter(
                     (item) => !droppedIds.has(item.id)
                 );
@@ -79,7 +80,7 @@ export function useItems() {
         []
     );
 
-    const moveItem = useCallback((item: Item, toDropped: boolean) => {
+    const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
         if (toDropped) {
             setItems((prev) => prev.filter((i) => i.id !== item.id));
             setDroppedItems((prev) => {
@@ -99,6 +100,30 @@ export function useItems() {
         setDroppedItems([]);
     }, []);
 
+    const updateTags = useCallback(
+        async (id: string, tags: string[]) => {
+            try {
+                const updatedItem = await itemsApi.updateTags(id, tags);
+
+                // Update in items list
+                setItems((prev) =>
+                    prev.map((item) => (item.id === id ? updatedItem : item))
+                );
+
+                // Update in droppedItems list
+                setDroppedItems((prev) =>
+                    prev.map((item) => (item.id === id ? updatedItem : item))
+                );
+
+                setError(null);
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to update tags');
+                throw err;
+            }
+        },
+        []
+    );
+
     return {
         items,
         droppedItems,
@@ -108,5 +133,6 @@ export function useItems() {
         addItem,
         moveItem,
         clearDropped,
+        updateTags,
     };
 }

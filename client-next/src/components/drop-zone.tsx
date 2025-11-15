@@ -2,16 +2,17 @@
 
 import { ItemCard } from './item-card';
 import { Button } from '@/components/ui/button';
-import type { Item } from '@/lib/api';
+import {TravelItem} from "@/types";
 
 interface DropZoneProps {
-    items: Item[];
-    onDrop: (item: Item) => void;
+    items: TravelItem[];
+    onDrop: (item: TravelItem) => void;
     onRestore: (id: string) => void;
     isDragOver: boolean;
     onDragOver: (e: React.DragEvent) => void;
     onDragLeave: (e: React.DragEvent) => void;
     onClearAll: () => void;
+    onRightClick?: (item: TravelItem) => void;
 }
 
 export function DropZone({
@@ -22,6 +23,7 @@ export function DropZone({
                              onDragOver,
                              onDragLeave,
                              onClearAll,
+                             onRightClick,
                          }: DropZoneProps) {
     return (
         <div
@@ -69,6 +71,7 @@ export function DropZone({
                                 key={item.id}
                                 item={item}
                                 onDelete={onRestore}
+                                onRightClick={onRightClick}
                                 draggable={false}
                                 isDropped={true}
                             />

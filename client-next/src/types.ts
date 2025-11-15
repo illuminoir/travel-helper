@@ -3,7 +3,6 @@ export type Tag = {
     name: string;
 }
 
-
 export type TravelItem = {
     id: number;
     name: string;
