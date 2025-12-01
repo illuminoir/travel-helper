@@ -13,6 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 
 interface AddItemDialogProps {
+<<<<<<< Updated upstream
     onAdd: (name: string, weight: number, category: string) => Promise<void>;
     isLoading?: boolean;
 }
@@ -23,14 +24,31 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
     const [weight, setWeight] = useState('');
     const [category, setCategory] = useState('');
     const [error, setError] = useState<string | null>(null);
+=======
+    onAdd: (name: string, weight: number) => Promise<void>
+    isLoading?: boolean
+}
+
+export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
+    const [open, setOpen] = useState(false)
+    const [name, setName] = useState("")
+    const [weight, setWeight] = useState("")
+    const [error, setError] = useState<string | null>(null)
+>>>>>>> Stashed changes
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
+<<<<<<< Updated upstream
         if (!name.trim() || !weight || !category.trim()) {
             setError('All fields are required');
             return;
+=======
+        if (!name.trim() || !weight) {
+            setError("All fields are required")
+            return
+>>>>>>> Stashed changes
         }
 
         const weightNum = parseFloat(weight);
@@ -40,11 +58,18 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
         }
 
         try {
+<<<<<<< Updated upstream
             await onAdd(name, weightNum, category);
             setName('');
             setWeight('');
             setCategory('');
             setOpen(false);
+=======
+            await onAdd(name, weightNum)
+            setName("")
+            setWeight("")
+            setOpen(false)
+>>>>>>> Stashed changes
         } catch {
             setError('Failed to add item');
         }
@@ -80,15 +105,6 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
                             value={weight}
                             onChange={(e) => setWeight(e.target.value)}
                             placeholder="0"
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium">Category</label>
-                        <Input
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            placeholder="Category"
                             disabled={isLoading}
                         />
                     </div>
