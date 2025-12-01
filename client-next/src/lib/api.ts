@@ -6,7 +6,6 @@ async function apiCall<T>(
     endpoint: string,
     options?: RequestInit
 ): Promise<T> {
-    console.log(options);
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
             'Content-Type': 'application/json',

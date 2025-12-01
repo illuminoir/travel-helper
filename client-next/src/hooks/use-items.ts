@@ -80,7 +80,7 @@ export function useItems() {
                 throw err;
             }
         },
-        []
+        [droppedItems]
     );
 
     const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
@@ -99,7 +99,7 @@ export function useItems() {
         }
     }, []);
 
-    const clearDropped = useCallback(() => {
+    const clearDropped = useCallback(()  => {
         setDroppedItems([]);
     }, []);
 
