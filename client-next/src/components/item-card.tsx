@@ -1,18 +1,20 @@
-'use client';
+"use client"
 
-import { Trash2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { TravelItem } from "@/types";
+import type React from "react"
+import type { TravelItem } from "@/types"
+
+import { Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
 interface ItemCardProps {
-    item: TravelItem;
-    onDelete: (id: string) => void;
-    onDragStart?: (e: React.DragEvent) => void;
-    onRightClick?: (item: TravelItem) => void;
-    onTagClick?: (tag: string) => void;
-    draggable?: boolean;
-    isDropped?: boolean;
+    item: TravelItem
+    onDelete: (id: number) => void
+    onDragStart?: (e: React.DragEvent) => void
+    onRightClick?: (item: TravelItem) => void
+    onTagClick?: (tag: string) => void
+    draggable?: boolean
+    isDropped?: boolean
 }
 
 export function ItemCard({
@@ -25,32 +27,33 @@ export function ItemCard({
                              isDropped = false,
                          }: ItemCardProps) {
     const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault();
-        onRightClick?.(item);
-    };
+        e.preventDefault()
+        onRightClick?.(item)
+    }
 
     return (
         <Card
-            className="p-4 flex flex-col gap-3 cursor-move hover:shadow-md transition-shadow"
+            className="relative p-4 flex flex-col gap-3 cursor-move hover:shadow-md transition-shadow"
             draggable={draggable}
             onDragStart={onDragStart}
             onContextMenu={handleContextMenu}
         >
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDelete(item.id)}
+                className="absolute top-2 right-2 text-base leading-none"
+            >
+                {isDropped ? "x" : <Trash2 className="w-4 h-4" />}
+            </Button>
+
             <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{item.name}</h3>
                     <p className="text-xs text-muted-foreground">
-                        {item.category} • {item.weight}kg
+                        {} • {item.weight}kg
                     </p>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onDelete(item.id)}
-                    className="flex-shrink-0 text-base leading-none"
-                >
-                    {isDropped ? 'x' : <Trash2 className="w-4 h-4" />}
-                </Button>
             </div>
             {Array.isArray(item.tags) && item.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1">
@@ -63,10 +66,10 @@ export function ItemCard({
                             >
                                 {tag.name}
                             </button>
-                        );
+                        )
                     })}
                 </div>
             )}
         </Card>
-    );
+    )
 }

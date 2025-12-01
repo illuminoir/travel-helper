@@ -1,70 +1,66 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {Tag, TravelItem} from "@/types";
+import type React from "react"
+import type { TravelItem } from "@/types"
+
+import { useState } from "react"
+import { X } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 interface TagContextMenuProps {
-    item: TravelItem;
-    isOpen: boolean;
-    onClose: () => void;
-    onSaveTags: (itemId: number, tags: Tag[] | undefined) => Promise<void>;
+    item: TravelItem
+    isOpen: boolean
+    onClose: () => void
+    onSaveTags: (itemId: number, tags: Array<{ name: string }>) => Promise<void>
 }
 
-export function TagContextMenu({
-                                   item,
-                                   isOpen,
-                                   onClose,
-                                   onSaveTags,
-                               }: TagContextMenuProps) {
-        const [tags, setTags] = useState<Tag[] | undefined>(item.tags);
-    const [tagInput, setTagInput] = useState('');
-    const [loading, setLoading] = useState(false);
+export function TagContextMenu({ item, isOpen, onClose, onSaveTags }: TagContextMenuProps) {
+    const normalizedTags = Array.isArray(item.tags)
+        ? item.tags
+            .map((tag) => (typeof tag === "object" && tag.name ? tag.name : String(tag || "").trim()))
+            .filter(Boolean)
+        : []
+
+    const [tags, setTags] = useState<string[]>(normalizedTags)
+    const [tagInput, setTagInput] = useState("")
+    const [loading, setLoading] = useState(false)
 
     const handleAddTag = () => {
-        if (tagInput.trim() && tags && !tags.map(tag => tag.name).includes(tagInput.trim())) {
-            setTags([...tags, {id: 0, name: tagInput.trim()}]);
-            setTagInput('');
+        if (tagInput.trim() && !tags.includes(tagInput.trim())) {
+            setTags([...tags, tagInput.trim()])
+            setTagInput("")
         }
-    };
+    }
 
-    const handleRemoveTag = (tag: Tag) => {
-        if (tags) {
-            setTags(tags.filter((t) => t !== tag));
-        }
-    };
+    const handleRemoveTag = (tag: string) => {
+        setTags(tags.filter((t) => t !== tag))
+    }
 
     const handleSave = async () => {
-        setLoading(true);
+        setLoading(true)
         try {
-            await onSaveTags(item.id, tags);
-            onClose();
+            const tagObjects = tags.map((tag) => ({ name: tag }))
+            await onSaveTags(item.id, tagObjects)
+            onClose()
         } finally {
-            setLoading(false);
+            setLoading(false)
         }
-    };
+    }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            handleAddTag();
+        if (e.key === "Enter") {
+            handleAddTag()
         }
-    };
+    }
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Tag Item</DialogTitle>
-                    <DialogDescription>Add tags to: {item.name}</DialogDescription>
+                    <DialogDescription>Add tags to: {String(item.name || "Item")}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                     <div className="flex gap-2">
@@ -82,14 +78,11 @@ export function TagContextMenu({
                     <div className="flex flex-wrap gap-2">
                         {tags.map((tag, index) => (
                             <div
-                                key={`tag-${tag}-${index}`}
+                                key={`tag-${String(tag)}-${index}`}
                                 className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm"
                             >
-                                {tag}
-                                <button
-                                    onClick={() => handleRemoveTag(tag)}
-                                    className="hover:text-blue-600"
-                                >
+                                {String(tag || "")}
+                                <button onClick={() => handleRemoveTag(tag)} className="hover:text-blue-600">
                                     <X className="w-3 h-3" />
                                 </button>
                             </div>
@@ -101,11 +94,11 @@ export function TagContextMenu({
                             Cancel
                         </Button>
                         <Button onClick={handleSave} disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Tags'}
+                            {loading ? "Saving..." : "Save Tags"}
                         </Button>
                     </div>
                 </div>
             </DialogContent>
         </Dialog>
-    );
+    )
 }
