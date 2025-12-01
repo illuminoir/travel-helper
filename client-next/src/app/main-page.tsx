@@ -11,14 +11,12 @@ import { TravelItem } from "@/types";
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, updateTags } = useItems();
-    const [draggedItem, setDraggedItem] = useState<TravelItem | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
-        setDraggedItem(item);
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('application/json', JSON.stringify(item));
     };
@@ -35,7 +33,6 @@ export default function Home() {
 
     const handleDrop = (item: TravelItem) => {
         setIsDragOver(false);
-        setDraggedItem(null);
         moveItem(item, true);
     };
 

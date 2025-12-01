@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import type { TravelItem } from "@/types"
-import { itemsApi } from "@/lib/api"
+import { useState, useEffect, useCallback } from 'react';
+import { itemsApi } from '@/lib/api';
+import { TravelItem } from '@/types';
 
 export function useItems() {
-    const [items, setItems] = useState<TravelItem[]>([])
-    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([])
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
+    const [items, setItems] = useState<TravelItem[]>([]);
+    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Load items from API and localStorage
     useEffect(() => {
@@ -16,8 +16,8 @@ export function useItems() {
             try {
                 const apiItems = await itemsApi.getAll()
 
-                const saved = localStorage.getItem("droppedItems")
-                let droppedItemsData: TravelItem[] = []
+                const saved = localStorage.getItem('droppedItems');
+                let droppedItemsData: TravelItem[] = [];
 
                 if (saved) {
                     try {
@@ -45,32 +45,40 @@ export function useItems() {
 
     // Now persistence happens when items change via moveItem
     useEffect(() => {
-        localStorage.setItem("droppedItems", JSON.stringify(droppedItems))
-    }, [droppedItems])
+        localStorage.setItem('droppedItems', JSON.stringify(droppedItems));
+    }, [droppedItems]);
 
-    const deleteItem = useCallback(async (id: number, isDropped: boolean) => {
-        if (isDropped) {
-            setDroppedItems((prev) => prev.filter((item) => item.id !== id))
-        } else {
+    const deleteItem = useCallback(
+        async (id: number, isDropped: boolean) => {
+            if (isDropped) {
+                setDroppedItems((prev) => prev.filter((item) => item.id !== id));
+            } else {
+                try {
+                    await itemsApi.delete(id);
+                    setItems((prev) => prev.filter((item) => item.id !== id));
+                } catch (err) {
+                    setError(err instanceof Error ? err.message : 'Failed to delete item');
+                }
+            }
+        },
+        []
+    );
+
+    const addItem = useCallback(
+        async (name: string, weight: number) => {
             try {
-                await itemsApi.delete(id)
-                setItems((prev) => prev.filter((item) => item.id !== id))
+                await itemsApi.add(name, weight);
+                const updatedItems = await itemsApi.getAll();
+                setItems(updatedItems.filter(item =>
+                    !droppedItems.some(d => d.id === item.id)
+                ));
+                setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Failed to delete item")
             }
-        }
-    }, [])
-
-    const addItem = useCallback(async (name: string, weight: number, category: string) => {
-        try {
-            const newItem = await itemsApi.add(name, weight, category)
-            setItems((prev) => [...prev, newItem])
-            setError(null)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to add item")
-            throw err
-        }
-    }, [])
+        },
+        [droppedItems]
+    );
 
     const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
         if (toDropped) {

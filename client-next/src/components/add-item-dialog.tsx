@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 
 interface AddItemDialogProps {
-    onAdd: (name: string, weight: number, category: string) => Promise<void>
+    onAdd: (name: string, weight: number) => Promise<void>
     isLoading?: boolean
 }
 
@@ -17,14 +17,13 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
     const [open, setOpen] = useState(false)
     const [name, setName] = useState("")
     const [weight, setWeight] = useState("")
-    const [category, setCategory] = useState("")
     const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setError(null)
 
-        if (!name.trim() || !weight || !category.trim()) {
+        if (!name.trim() || !weight) {
             setError("All fields are required")
             return
         }
@@ -36,11 +35,10 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
         }
 
         try {
-            await onAdd(name, weightNum, category)
-            setName("")
-            setWeight("")
-            setCategory("")
-            setOpen(false)
+            await onAdd(name, weightNum);
+            setName('');
+            setWeight('');
+            setOpen(false);
         } catch {
             setError("Failed to add item")
         }
@@ -50,7 +48,7 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button className="gap-2">
-                    <Plus className="w-4 h-4" />
+                    <Plus className="w-4 h-4"/>
                     Add Item
                 </Button>
             </DialogTrigger>
@@ -76,15 +74,6 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
                             value={weight}
                             onChange={(e) => setWeight(e.target.value)}
                             placeholder="0"
-                            disabled={isLoading}
-                        />
-                    </div>
-                    <div>
-                        <label className="text-sm font-medium">Category</label>
-                        <Input
-                            value={category}
-                            onChange={(e) => setCategory(e.target.value)}
-                            placeholder="Category"
                             disabled={isLoading}
                         />
                     </div>

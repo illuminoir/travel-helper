@@ -1,8 +1,11 @@
-import type { TravelItem } from "@/types"
+import { TravelItem } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
-async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
+async function apiCall<T>(
+    endpoint: string,
+    options?: RequestInit
+): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: {
             "Content-Type": "application/json",
@@ -19,12 +22,12 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
 }
 
 export const itemsApi = {
-    getAll: () => apiCall<TravelItem[]>("/items"),
-    delete: (id: number) => apiCall<void>(`/items/${id}`, { method: "DELETE" }),
-    add: (name: string, weight: number, category: string) =>
-        apiCall<TravelItem>("/items", {
-            method: "POST",
-            body: JSON.stringify({ name, weight, category }),
+    getAll: () => apiCall<TravelItem[]>('/items'),
+    delete: (id: number) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
+    add: (name: string, weight: number) =>
+        apiCall<TravelItem>('/items', {
+            method: 'PUT',
+            body: JSON.stringify({ name, weight }),
         }),
     updateStatus: (id: number, status: "available" | "dropped") =>
         apiCall<void>(`/items/${id}`, {

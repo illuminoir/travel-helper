@@ -1,16 +1,22 @@
 "use client"
 
-import type React from "react"
-import type { TravelItem } from "@/types"
+import React from "react"
+import { TravelItem } from "@/types"
 
 import { ItemCard } from "./item-card"
 
 interface ItemsListProps {
-    items: TravelItem[]
-    onDelete: (id: number) => void
-    onDragStart: (e: React.DragEvent, item: TravelItem) => void
-    onRightClick?: (item: TravelItem) => void
-    onTagClick?: (tag: string) => void
+    items: TravelItem[];
+    onDelete: (id: number) => void;
+    onDragStart: (e: React.DragEvent, item: TravelItem) => void;
+    onRightClick?: (item: TravelItem) => void;
+    onTagClick?: (tag: string) => void;
+}
+
+interface ItemsListProps {
+    items: TravelItem[];
+    onDelete: (id: string) => void;
+    onDragStart: (e: React.DragEvent, item: TravelItem) => void;
 }
 
 export function ItemsList({ items, onDelete, onDragStart, onRightClick, onTagClick }: ItemsListProps) {
