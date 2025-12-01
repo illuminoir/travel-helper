@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Item, itemsApi } from '@/lib/api';
+import { itemsApi } from '@/lib/api';
+import { TravelItem } from '@/types';
 
 export function useItems() {
-    const [items, setItems] = useState<Item[]>([]);
-    const [droppedItems, setDroppedItems] = useState<Item[]>([]);
+    const [items, setItems] = useState<TravelItem[]>([]);
+    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -16,7 +17,7 @@ export function useItems() {
                 const apiItems = await itemsApi.getAll();
 
                 const saved = localStorage.getItem('droppedItems');
-                let droppedItemsData: Item[] = [];
+                let droppedItemsData: TravelItem[] = [];
 
                 if (saved) {
                     try {
@@ -26,7 +27,7 @@ export function useItems() {
                     }
                 }
 
-                const droppedIds = new Set(droppedItemsData.map((item: Item) => item.id));
+                const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id));
                 const availableItems = apiItems.filter(
                     (item) => !droppedIds.has(item.id)
                 );
@@ -50,7 +51,7 @@ export function useItems() {
     }, [droppedItems]);
 
     const deleteItem = useCallback(
-        async (id: string, isDropped: boolean) => {
+        async (id: number, isDropped: boolean) => {
             if (isDropped) {
                 setDroppedItems((prev) => prev.filter((item) => item.id !== id));
             } else {
@@ -66,10 +67,13 @@ export function useItems() {
     );
 
     const addItem = useCallback(
-        async (name: string, weight: number, category: string) => {
+        async (name: string, weight: number) => {
             try {
-                const newItem = await itemsApi.add(name, weight, category);
-                setItems((prev) => [...prev, newItem]);
+                await itemsApi.add(name, weight);
+                const updatedItems = await itemsApi.getAll();
+                setItems(updatedItems.filter(item =>
+                    !droppedItems.some(d => d.id === item.id)
+                ));
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to add item');
@@ -79,7 +83,7 @@ export function useItems() {
         []
     );
 
-    const moveItem = useCallback((item: Item, toDropped: boolean) => {
+    const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
         if (toDropped) {
             setItems((prev) => prev.filter((i) => i.id !== item.id));
             setDroppedItems((prev) => {

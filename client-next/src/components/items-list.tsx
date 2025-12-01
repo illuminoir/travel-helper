@@ -1,12 +1,12 @@
 'use client';
 
+import { TravelItem } from '@/types';
 import { ItemCard } from './item-card';
-import type { Item } from '@/lib/api';
 
 interface ItemsListProps {
-    items: Item[];
+    items: TravelItem[];
     onDelete: (id: string) => void;
-    onDragStart: (e: React.DragEvent, item: Item) => void;
+    onDragStart: (e: React.DragEvent, item: TravelItem) => void;
 }
 
 export function ItemsList({

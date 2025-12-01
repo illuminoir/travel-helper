@@ -5,15 +5,13 @@ import { useItems } from '@/hooks/use-items';
 import { AddItemDialog } from '@/components/add-item-dialog';
 import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
-import type { Item } from '@/lib/api';
+import { TravelItem } from '@/types';
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
-    const [draggedItem, setDraggedItem] = useState<Item | null>(null);
     const [isDragOver, setIsDragOver] = useState(false);
 
-    const handleDragStart = (e: React.DragEvent, item: Item) => {
-        setDraggedItem(item);
+    const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('application/json', JSON.stringify(item));
     };
@@ -28,9 +26,8 @@ export default function Home() {
         setIsDragOver(false);
     };
 
-    const handleDrop = (item: Item) => {
+    const handleDrop = (item: TravelItem) => {
         setIsDragOver(false);
-        setDraggedItem(null);
         moveItem(item, true);
     };
 

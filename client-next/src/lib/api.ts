@@ -24,10 +24,10 @@ async function apiCall<T>(
 
 export const itemsApi = {
     getAll: () => apiCall<TravelItem[]>('/items'),
-    delete: (id: string) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
-    add: (name: string, weight: number, category: string) =>
+    delete: (id: number) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
+    add: (name: string, weight: number) =>
         apiCall<TravelItem>('/items', {
             method: 'PUT',
-            body: JSON.stringify({ name, weight, category }),
+            body: JSON.stringify({ name, weight }),
         }),
 };
