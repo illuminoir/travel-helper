@@ -1,11 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { TravelItem } from "@/types";
 
-export interface Item {
-    id: string;
-    name: string;
-    weight: number;
-    category: string;
-}
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
 async function apiCall<T>(
     endpoint: string,
@@ -28,10 +23,10 @@ async function apiCall<T>(
 }
 
 export const itemsApi = {
-    getAll: () => apiCall<Item[]>('/items'),
+    getAll: () => apiCall<TravelItem[]>('/items'),
     delete: (id: string) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
     add: (name: string, weight: number, category: string) =>
-        apiCall<Item>('/items', {
+        apiCall<TravelItem>('/items', {
             method: 'PUT',
             body: JSON.stringify({ name, weight, category }),
         }),
