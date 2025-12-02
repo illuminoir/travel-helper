@@ -1,12 +1,12 @@
 'use client';
 
-import { ItemCard } from './item-card';
-import { Button } from '@/components/ui/button';
-import type { Item } from '@/lib/api';
+import { ItemCard } from "./item-card";
+import { Button } from "@/components/ui/button";
+import { TravelItem } from "@/types";
 
 interface DropZoneProps {
-    items: Item[];
-    onDrop: (item: Item) => void;
+    items: TravelItem[];
+    onDrop: (item: TravelItem) => void;
     onRestore: (id: string) => void;
     isDragOver: boolean;
     onDragOver: (e: React.DragEvent) => void;

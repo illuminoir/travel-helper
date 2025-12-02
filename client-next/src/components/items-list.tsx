@@ -1,6 +1,6 @@
 'use client';
 
-import { TravelItem } from '@/types';
+import { TravelItem } from "@/types";
 import { ItemCard } from './item-card';
 
 interface ItemsListProps {
