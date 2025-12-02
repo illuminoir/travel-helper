@@ -1,12 +1,12 @@
 'use client';
 
-import { Trash2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import type { Item } from '@/lib/api';
+import { Trash2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { TravelItem } from "@/types";
 
 interface ItemCardProps {
-    item: Item;
+    item: TravelItem;
     onDelete: (id: string) => void;
     onDragStart?: (e: React.DragEvent) => void;
     draggable?: boolean;
@@ -29,7 +29,7 @@ export function ItemCard({
             <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm truncate">{item.name}</h3>
                 <p className="text-xs text-muted-foreground">
-                    {item.category} • {item.weight}kg
+                    {} • {item.weight}kg
                 </p>
             </div>
             <Button

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { useItems } from '@/hooks/use-items';
-import { AddItemDialog } from '@/components/add-item-dialog';
-import { ItemsList } from '@/components/items-list';
-import { DropZone } from '@/components/drop-zone';
-import { TravelItem } from '@/types';
+import { useState } from "react";
+import { useItems } from "@/hooks/use-items";
+import { AddItemDialog } from "@/components/add-item-dialog";
+import { ItemsList } from "@/components/items-list";
+import { DropZone } from "@/components/drop-zone";
+import { TravelItem } from "@/types";
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
