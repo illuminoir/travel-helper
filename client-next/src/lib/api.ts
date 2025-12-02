@@ -1,4 +1,4 @@
-import { TravelItem } from "@/types";
+import { Tag, TravelItem } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
@@ -38,5 +38,14 @@ export const itemsApi = {
         apiCall<TravelItem>(`/items/${id}`, {
             method: "PATCH",
             body: JSON.stringify({ tags }),
+        }),
+}
+
+export const tagsApi = {
+    getAll: () => apiCall<Tag[]>("/tags"),
+    create: (name: string) =>
+        apiCall<{ id: number; name: string }>("/tags", {
+            method: "POST",
+            body: JSON.stringify({ name }),
         }),
 }

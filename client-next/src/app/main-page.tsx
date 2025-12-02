@@ -7,7 +7,7 @@ import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
 import { TagContextMenu } from '@/components/tag-context-menu';
 import { TagFilter } from '@/components/tag-filter';
-import { TravelItem } from "@/types";
+import {Tag, TravelItem} from "@/types";
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, updateTags } = useItems();
@@ -15,6 +15,8 @@ export default function Home() {
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [availableTags, setAvailableTags] = useState<Tag[]>([])
+
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
         e.dataTransfer.effectAllowed = 'move';
@@ -61,6 +63,10 @@ export default function Home() {
             prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
         );
     };
+
+    const handleTagCreated = (newTag: { id: number; name: string }) => {
+        setAvailableTags((prev) => [...prev, newTag])
+    }
 
     if (loading) {
         return (
@@ -117,10 +123,12 @@ export default function Home() {
                     item={selectedItem}
                     isOpen={isTagDialogOpen}
                     onClose={() => {
-                        setIsTagDialogOpen(false);
-                        setSelectedItem(null);
+                        setIsTagDialogOpen(false)
+                        setSelectedItem(null)
                     }}
                     onSaveTags={updateTags}
+                    availableTags={availableTags}
+                    onTagCreated={handleTagCreated}
                 />
             )}
         </main>
