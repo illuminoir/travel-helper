@@ -12,12 +12,6 @@ interface ItemsListProps {
     onTagClick?: (tag: string) => void;
 }
 
-interface ItemsListProps {
-    items: TravelItem[];
-    onDelete: (id: string) => void;
-    onDragStart: (e: React.DragEvent, item: TravelItem) => void;
-}
-
 export function ItemsList({
     items,
     onDelete,

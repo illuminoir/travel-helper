@@ -36,7 +36,7 @@ export default function Home() {
         moveItem(item, true);
     };
 
-    const handleRestoreItem = (id: string) => {
+    const handleRestoreItem = (id: number) => {
         const itemToRestore = droppedItems.find((item) => item.id === id);
         if (itemToRestore) {
             moveItem(itemToRestore, false);

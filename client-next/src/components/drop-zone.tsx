@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 interface DropZoneProps {
     items: TravelItem[];
     onDrop: (item: TravelItem) => void;
-    onRestore: (id: string) => void;
+    onRestore: (id: number) => void;
     isDragOver: boolean;
     onDragOver: (e: React.DragEvent) => void;
     onDragLeave: (e: React.DragEvent) => void;
