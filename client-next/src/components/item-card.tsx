@@ -1,20 +1,21 @@
-"use client"
+"use client";
 
-import type React from "react"
-import type { TravelItem } from "@/types"
+import type React from "react";
 
-import { Trash2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { TravelItem } from "@/types";
+
 
 interface ItemCardProps {
-    item: TravelItem
-    onDelete: (id: number) => void
-    onDragStart?: (e: React.DragEvent) => void
-    onRightClick?: (item: TravelItem) => void
-    onTagClick?: (tag: string) => void
-    draggable?: boolean
-    isDropped?: boolean
+    item: TravelItem;
+    onDelete: (id: number) => void;
+    onDragStart?: (e: React.DragEvent) => void;
+    onRightClick?: (item: TravelItem) => void;
+    onTagClick?: (tag: string) => void;
+    draggable?: boolean;
+    isDropped?: boolean;
 }
 
 export function ItemCard({
@@ -71,5 +72,5 @@ export function ItemCard({
                 </div>
             )}
         </Card>
-    )
+    );
 }

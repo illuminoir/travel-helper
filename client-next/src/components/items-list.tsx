@@ -1,8 +1,7 @@
-"use client"
+"use client";
 
-import React from "react"
-import { TravelItem } from "@/types"
-
+import React from "react";
+import { TravelItem } from "@/types";
 import { ItemCard } from "./item-card"
 
 interface ItemsListProps {
@@ -19,9 +18,19 @@ interface ItemsListProps {
     onDragStart: (e: React.DragEvent, item: TravelItem) => void;
 }
 
-export function ItemsList({ items, onDelete, onDragStart, onRightClick, onTagClick }: ItemsListProps) {
+export function ItemsList({
+    items,
+    onDelete,
+    onDragStart,
+    onRightClick,
+    onTagClick
+                          }: ItemsListProps) {
     if (items.length === 0) {
-        return <div className="text-center py-12 text-muted-foreground">No items available</div>
+        return (
+            <div className="text-center py-12 text-muted-foreground">
+                No items available
+            </div>
+        );
     }
 
     return (
@@ -38,5 +47,5 @@ export function ItemsList({ items, onDelete, onDragStart, onRightClick, onTagCli
                 />
             ))}
         </div>
-    )
+    );
 }

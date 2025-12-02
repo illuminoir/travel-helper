@@ -1,20 +1,20 @@
-"use client"
+"use client";
 
-import type React from "react"
-import type { TravelItem } from "@/types"
+import type React from "react";
+import type { TravelItem } from "@/types";
 
-import { ItemCard } from "./item-card"
-import { Button } from "@/components/ui/button"
+import { ItemCard } from "./item-card";
+import { Button } from "@/components/ui/button";
 
 interface DropZoneProps {
-    items: TravelItem[]
-    onDrop: (item: TravelItem) => void
-    onRestore: (id: number) => void
-    isDragOver: boolean
-    onDragOver: (e: React.DragEvent) => void
-    onDragLeave: (e: React.DragEvent) => void
-    onClearAll: () => void
-    onRightClick?: (item: TravelItem) => void
+    items: TravelItem[];
+    onDrop: (item: TravelItem) => void;
+    onRestore: (id: string) => void;
+    isDragOver: boolean;
+    onDragOver: (e: React.DragEvent) => void;
+    onDragLeave: (e: React.DragEvent) => void;
+    onClearAll: () => void;
+    onRightClick?: (item: TravelItem) => void;
 }
 
 export function DropZone({
@@ -30,24 +30,33 @@ export function DropZone({
     return (
         <div
             className={`flex-1 border-2 border-dashed rounded-lg p-6 transition-colors ${
-                isDragOver ? "border-primary bg-primary/5" : "border-muted-foreground/20 bg-muted/50"
+                isDragOver
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/20 bg-muted/50"
             }`}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={(e) => {
-                e.preventDefault()
-                const data = e.dataTransfer.getData("application/json")
+                e.preventDefault();
+                const data = e.dataTransfer.getData("application/json");
                 if (data) {
-                    const item = JSON.parse(data)
-                    onDrop(item)
+                    const item = JSON.parse(data);
+                    onDrop(item);
                 }
             }}
         >
             <div className="flex flex-col gap-4 h-full">
                 <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm">Dropped Items ({items.length})</h3>
+                    <h3 className="font-semibold text-sm">
+                        Dropped Items ({items.length})
+                    </h3>
                     {items.length > 0 && (
-                        <Button variant="outline" size="sm" onClick={onClearAll} className="text-xs bg-transparent">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={onClearAll}
+                            className="text-xs"
+                        >
                             Clear All
                         </Button>
                     )}
@@ -73,5 +82,5 @@ export function DropZone({
                 )}
             </div>
         </div>
-    )
+    );
 }
