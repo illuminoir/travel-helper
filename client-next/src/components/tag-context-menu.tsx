@@ -1,39 +1,30 @@
-"use client"
-import type {Tag, TravelItem} from "@/types"
+"use client";
+import type { Tag, TravelItem } from "@/types";
 
-import { useState } from "react"
-import { X, Check } from "lucide-react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { CreateTagDialog } from "@/components/create-tag-dialog"
+import { useState } from "react";
+import { X, Check } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { CreateTagDialog } from "@/components/create-tag-dialog";
 import * as React from "react";
-import {useTags} from "@/hooks/use-tags";
+import { useTags } from "@/hooks/use-tags";
 
 interface TagContextMenuProps {
-    item: TravelItem
-    isOpen: boolean
-    onClose: () => void
-    onSaveTags: (itemId: number, tags: Array<{ name: string }>) => Promise<void>
-    availableTags: Array<{ id: number; name: string }>
-    onTagCreated: (tag: { id: number; name: string }) => void
+    item: TravelItem;
+    isOpen: boolean;
+    onClose: () => void;
+    onTagCreated: (tag: { id: number; name: string }) => void;
 }
 
 export function TagContextMenu({
                                    item,
                                    isOpen,
                                    onClose,
-                                   onSaveTags,
-                                   availableTags,
                                    onTagCreated,
                                }: TagContextMenuProps) {
-    const normalizedTags = Array.isArray(item.tags)
-        ? item.tags
-            .map((tag) => (typeof tag === "object" && tag.name ? tag.name : String(tag || "").trim()))
-            .filter(Boolean)
-        : []
-    const { tags, droppedItems, loading, error } = useTags();
+    const { tags, updateTags, loading } = useTags();
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
-    const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false)
+    const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
 
     const handleTagToggle = (tagName: string) => {
         setSelectedTags(prevTags =>
@@ -41,26 +32,29 @@ export function TagContextMenu({
                 ? prevTags.filter(tag => tag !== tagName)
                 : [...prevTags, tagName]
         );
-    }
+    };
 
     const handleSave = async () => {
-        //setLoading(true)
-        try {
-            const tagObjects = tags.map((tag) => ({ name: tag }))
-            await onSaveTags(item.id, tagObjects)
-            onClose()
-        } finally {
-            //setLoading(false)
-        }
-    }
+        const itemTags = item.tags;
+        const itemTagNames = itemTags.map(tag => tag.name);
+
+        const tagsToCreate = tags.filter(tag => selectedTags
+            .filter(tagName => !itemTagNames.includes(tagName))
+            .includes(tag.name))
+            .map(tag => tag.id);
+        const tagsToDelete = itemTags.filter(tag => !selectedTags.includes(tag.name))
+            .map(tag => tag.id);
+        await updateTags(item.id, tagsToCreate, tagsToDelete);
+        onClose();
+    };
 
     const handleTagCreated = (newTag: { id: number; name: string }) => {
-        onTagCreated(newTag)
+        onTagCreated(newTag);
         /*if (!tags.includes(newTag.name)) {
             setTags([...tags, newTag.name])
         }*/
-        setIsCreateTagDialogOpen(false)
-    }
+        setIsCreateTagDialogOpen(false);
+    };
 
     return (
         <>
@@ -88,7 +82,8 @@ export function TagContextMenu({
                                             className="w-full text-left px-3 py-2 rounded-md hover:bg-muted flex items-center justify-between transition-colors"
                                         >
                                             <span className="text-sm">{tag.name}</span>
-                                            {selectedTags.includes(tag.name) && <Check className="w-4 h-4 text-green-600" />}
+                                            {selectedTags.includes(tag.name) &&
+                                                <Check className="w-4 h-4 text-green-600"/>}
                                         </button>
                                     ))
                                 )}
@@ -124,5 +119,5 @@ export function TagContextMenu({
                 onCreateTag={handleTagCreated}
             />
         </>
-    )
+    );
 }

@@ -1,7 +1,6 @@
-
-import { useState, useEffect, useCallback } from "react";
-import {itemsApi, tagsApi} from "@/lib/api";
-import {Tag, TravelItem} from "@/types";
+import { useEffect, useState } from "react";
+import { tagsApi, tagMappingApi } from "@/lib/api";
+import { Tag } from "@/types";
 
 export function useTags() {
     const [tags, setTags] = useState<Tag[]>([]);
@@ -12,26 +11,39 @@ export function useTags() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                console.log("loading tags");
-                const apiTags = await tagsApi.getAll()
-                console.log(apiTags);
-                setTags(apiTags)
-                setError(null)
+                const apiTags = await tagsApi.getAll();
+                setTags(apiTags);
+                setError(null);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load items")
+                setError(err instanceof Error ? err.message : "Failed to load items");
             } finally {
-                setLoading(false)
+                setLoading(false);
             }
+        };
+
+        loadData();
+    }, []);
+
+    // when we save the tags for a new item, we need to create isTagged mappings
+    // for each new tag id, create a new database mapping (itemId, tagId)
+    // and for every removed tag, remove this mapping
+    const updateTags = async (
+        itemId: number,
+        tagsToCreate: number[],
+        tagsToDelete: number[]
+    ) => {
+        for (const tagId of tagsToCreate) {
+            await tagMappingApi.createTagMapping(itemId, tagId);
         }
-
-        loadData()
-    }, [])
-
-    const updateTagLinks
+        for (const tagId of tagsToDelete) {
+            await tagMappingApi.removeTagMapping(itemId, tagId);
+        }
+    };
 
     return {
         tags,
+        updateTags,
         loading,
         error,
-    }
+    };
 }

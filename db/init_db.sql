@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS tags (
     name VARCHAR(255)
 );
 
-CREATE TABLE IF NOT EXISTS isTagged (
+CREATE TABLE IF NOT EXISTS tag_mapping (
     itemId INT,
     tagId INT,
     PRIMARY KEY (itemId, tagId),
@@ -33,10 +33,10 @@ INSERT INTO tags(name) VALUES("Winter");
 INSERT INTO tags(name) VALUES("Black");
 INSERT INTO tags(name) VALUES("White");
 
-INSERT INTO isTagged VALUES(1, 2);
-INSERT INTO isTagged VALUES(2, 1);
-INSERT INTO isTagged VALUES(3, 3);
-INSERT INTO isTagged VALUES(2, 4);
-INSERT INTO isTagged VALUES(1, 5);
-INSERT INTO isTagged VALUES(3, 5);
-INSERT INTO isTagged VALUES(2, 6);
+INSERT INTO tag_mapping VALUES(1, 2);
+INSERT INTO tag_mapping VALUES(2, 1);
+INSERT INTO tag_mapping VALUES(3, 3);
+INSERT INTO tag_mapping VALUES(2, 4);
+INSERT INTO tag_mapping VALUES(1, 5);
+INSERT INTO tag_mapping VALUES(3, 5);
+INSERT INTO tag_mapping VALUES(2, 6);
