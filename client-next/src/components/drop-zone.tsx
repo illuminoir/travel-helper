@@ -1,17 +1,20 @@
-'use client';
+"use client";
+
+import type React from "react";
+import type { TravelItem } from "@/types";
 
 import { ItemCard } from "./item-card";
 import { Button } from "@/components/ui/button";
-import { TravelItem } from "@/types";
 
 interface DropZoneProps {
     items: TravelItem[];
     onDrop: (item: TravelItem) => void;
-    onRestore: (id: string) => void;
+    onRestore: (id: number) => void;
     isDragOver: boolean;
     onDragOver: (e: React.DragEvent) => void;
     onDragLeave: (e: React.DragEvent) => void;
     onClearAll: () => void;
+    onRightClick?: (item: TravelItem) => void;
 }
 
 export function DropZone({
@@ -22,19 +25,20 @@ export function DropZone({
                              onDragOver,
                              onDragLeave,
                              onClearAll,
+                             onRightClick,
                          }: DropZoneProps) {
     return (
         <div
             className={`flex-1 border-2 border-dashed rounded-lg p-6 transition-colors ${
                 isDragOver
-                    ? 'border-primary bg-primary/5'
-                    : 'border-muted-foreground/20 bg-muted/50'
+                    ? "border-primary bg-primary/5"
+                    : "border-muted-foreground/20 bg-muted/50"
             }`}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={(e) => {
                 e.preventDefault();
-                const data = e.dataTransfer.getData('application/json');
+                const data = e.dataTransfer.getData("application/json");
                 if (data) {
                     const item = JSON.parse(data);
                     onDrop(item);
@@ -69,6 +73,7 @@ export function DropZone({
                                 key={item.id}
                                 item={item}
                                 onDelete={onRestore}
+                                onRightClick={onRightClick}
                                 draggable={false}
                                 isDropped={true}
                             />

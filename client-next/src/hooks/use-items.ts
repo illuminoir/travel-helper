@@ -1,4 +1,4 @@
-'use client';
+"use client"
 
 import { useState, useEffect, useCallback } from "react";
 import { itemsApi } from "@/lib/api";
@@ -14,36 +14,34 @@ export function useItems() {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const apiItems = await itemsApi.getAll();
+                const apiItems = await itemsApi.getAll()
 
                 const saved = localStorage.getItem('droppedItems');
                 let droppedItemsData: TravelItem[] = [];
 
                 if (saved) {
                     try {
-                        droppedItemsData = JSON.parse(saved);
+                        droppedItemsData = JSON.parse(saved)
                     } catch {
-                        localStorage.removeItem('droppedItems');
+                        localStorage.removeItem("droppedItems")
                     }
                 }
 
-                const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id));
-                const availableItems = apiItems.filter(
-                    (item) => !droppedIds.has(item.id)
-                );
+                const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id))
+                const availableItems = apiItems.filter((item) => !droppedIds.has(item.id))
 
-                setItems(availableItems);
-                setDroppedItems(droppedItemsData);
-                setError(null);
+                setItems(availableItems)
+                setDroppedItems(droppedItemsData)
+                setError(null)
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load items');
+                setError(err instanceof Error ? err.message : "Failed to load items")
             } finally {
-                setLoading(false);
+                setLoading(false)
             }
-        };
+        }
 
-        loadData();
-    }, []);
+        loadData()
+    }, [])
 
     // Now persistence happens when items change via moveItem
     useEffect(() => {
@@ -76,8 +74,7 @@ export function useItems() {
                 ));
                 setError(null);
             } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to add item');
-                throw err;
+                setError(err instanceof Error ? err.message : "Failed to delete item")
             }
         },
         [droppedItems]
@@ -85,23 +82,23 @@ export function useItems() {
 
     const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
         if (toDropped) {
-            setItems((prev) => prev.filter((i) => i.id !== item.id));
+            setItems((prev) => prev.filter((i) => i.id !== item.id))
             setDroppedItems((prev) => {
-                const alreadyExists = prev.some((i) => i.id === item.id);
-                return alreadyExists ? prev : [...prev, item];
-            });
+                const alreadyExists = prev.some((i) => i.id === item.id)
+                return alreadyExists ? prev : [...prev, item]
+            })
         } else {
-            setDroppedItems((prev) => prev.filter((i) => i.id !== item.id));
+            setDroppedItems((prev) => prev.filter((i) => i.id !== item.id))
             setItems((prev) => {
-                const alreadyExists = prev.some((i) => i.id === item.id);
-                return alreadyExists ? prev : [...prev, item];
-            });
+                const alreadyExists = prev.some((i) => i.id === item.id)
+                return alreadyExists ? prev : [...prev, item]
+            })
         }
-    }, []);
+    }, [])
 
-    const clearDropped = useCallback(()  => {
-        setDroppedItems([]);
-    }, []);
+    const clearDropped = useCallback(() => {
+        setDroppedItems([])
+    }, [])
 
     return {
         items,
@@ -112,5 +109,5 @@ export function useItems() {
         addItem,
         moveItem,
         clearDropped,
-    };
+    }
 }

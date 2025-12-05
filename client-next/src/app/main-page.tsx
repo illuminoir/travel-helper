@@ -1,15 +1,21 @@
 'use client';
 
-import { useState } from "react";
-import { useItems } from "@/hooks/use-items";
-import { AddItemDialog } from "@/components/add-item-dialog";
-import { ItemsList } from "@/components/items-list";
-import { DropZone } from "@/components/drop-zone";
+import { useState } from 'react';
+import { useItems } from '@/hooks/use-items';
+import { AddItemDialog } from '@/components/add-item-dialog';
+import { ItemsList } from '@/components/items-list';
+import { DropZone } from '@/components/drop-zone';
+import { TagContextMenu } from '@/components/tag-context-menu';
+import { TagFilter } from '@/components/tag-filter';
 import { TravelItem } from "@/types";
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
     const [isDragOver, setIsDragOver] = useState(false);
+    const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
+    const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
         e.dataTransfer.effectAllowed = 'move';
@@ -31,11 +37,30 @@ export default function Home() {
         moveItem(item, true);
     };
 
-    const handleRestoreItem = (id: string) => {
+    const handleRestoreItem = (id: number) => {
         const itemToRestore = droppedItems.find((item) => item.id === id);
         if (itemToRestore) {
             moveItem(itemToRestore, false);
         }
+    };
+
+    const handleRightClick = (item: TravelItem) => {
+        setSelectedItem(item);
+        setIsTagDialogOpen(true);
+    };
+
+    const filteredItems = selectedTags.length === 0
+        ? items
+        : items.filter((item) =>
+            selectedTags.every((tag) =>
+                Array.isArray(item.tags) && item.tags.map(tag => tag.name).includes(tag)
+            )
+        );
+
+    const handleTagClick = (tag: string) => {
+        setSelectedTags((prev) =>
+            prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
+        );
     };
 
     if (loading) {
@@ -51,7 +76,8 @@ export default function Home() {
             <div className="max-w-6xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Item Manager</h1>
-                    <p className="text-muted-foreground">Drag items to organize them</p>
+                    <p className="text-muted-foreground">Drag items to organize them • Right-click to tag • Click tags
+                        to filter</p>
                 </div>
 
                 {error && (
@@ -60,15 +86,18 @@ export default function Home() {
                     </div>
                 )}
 
-                <AddItemDialog onAdd={addItem} isLoading={false} />
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-96">
+                    <AddItemDialog onAdd={addItem} isLoading={false}/>
+                    <div>Total Weight : { droppedItems.reduce((sum, current) => sum + current.weight, 0) }</div>
                     <div className="space-y-4">
                         <h2 className="font-semibold text-lg">Available Items</h2>
+                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick}/>
                         <ItemsList
-                            items={items}
+                            items={filteredItems}
                             onDelete={(id) => deleteItem(id, false)}
                             onDragStart={handleDragStart}
+                            onRightClick={handleRightClick}
+                            onTagClick={handleTagClick}
                         />
                     </div>
 
@@ -80,9 +109,21 @@ export default function Home() {
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onClearAll={clearDropped}
+                        onRightClick={handleRightClick}
                     />
                 </div>
             </div>
+
+            {selectedItem && (
+                <TagContextMenu
+                    item={selectedItem}
+                    isOpen={isTagDialogOpen}
+                    onClose={() => {
+                            setIsTagDialogOpen(false)
+                            setSelectedItem(null)
+                    }}
+                />
+            )}
         </main>
-    );
+);
 }

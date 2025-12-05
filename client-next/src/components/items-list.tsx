@@ -1,18 +1,23 @@
-'use client';
+"use client";
 
+import React from "react";
 import { TravelItem } from "@/types";
-import { ItemCard } from './item-card';
+import { ItemCard } from "./item-card"
 
 interface ItemsListProps {
     items: TravelItem[];
-    onDelete: (id: string) => void;
+    onDelete: (id: number) => void;
     onDragStart: (e: React.DragEvent, item: TravelItem) => void;
+    onRightClick?: (item: TravelItem) => void;
+    onTagClick?: (tag: string) => void;
 }
 
 export function ItemsList({
-                              items,
-                              onDelete,
-                              onDragStart,
+    items,
+    onDelete,
+    onDragStart,
+    onRightClick,
+    onTagClick
                           }: ItemsListProps) {
     if (items.length === 0) {
         return (
@@ -30,6 +35,8 @@ export function ItemsList({
                     item={item}
                     onDelete={onDelete}
                     onDragStart={(e) => onDragStart(e, item)}
+                    onRightClick={onRightClick}
+                    onTagClick={onTagClick}
                     draggable
                 />
             ))}

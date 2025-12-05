@@ -10,9 +10,9 @@ router.get("/", async (req, res) => {
         // Enrich each item with its tags
         const enrichedItems = await Promise.all(
             items.map(async (item) => {
-                // Get tag IDs from isTagged
+                // Get tag IDs from tag_mapping
                 const [tagLinks] = await pool.query(
-                    "SELECT tagId FROM isTagged WHERE itemId = ?",
+                    "SELECT tagId FROM tag_mapping WHERE itemId = ?",
                     [item.id]
                 );
 
@@ -43,7 +43,6 @@ router.get("/", async (req, res) => {
 
 
 router.put("/", async (req, res) => {
-    console.log("in back");
     const { name, weight } = req.body;
 
     if (!name || typeof weight !== "number") {
