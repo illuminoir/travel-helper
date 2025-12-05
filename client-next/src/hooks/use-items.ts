@@ -100,28 +100,6 @@ export function useItems() {
         setDroppedItems([])
     }, [])
 
-    const updateTags = useCallback(async (id: number, tags: Array<{ name: string }>) => {
-        try {
-            const updatedItem = await itemsApi.updateTags(id, tags)
-
-            const normalizedItem = {
-                ...updatedItem,
-                tags: Array.isArray(updatedItem.tags) ? updatedItem.tags : [],
-            }
-
-            // Update in items list
-            setItems((prev) => prev.map((item) => (item.id === id ? normalizedItem : item)))
-
-            // Update in droppedItems list
-            setDroppedItems((prev) => prev.map((item) => (item.id === id ? normalizedItem : item)))
-
-            setError(null)
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update tags")
-            throw err
-        }
-    }, [])
-
     return {
         items,
         droppedItems,
@@ -131,6 +109,5 @@ export function useItems() {
         addItem,
         moveItem,
         clearDropped,
-        updateTags,
     }
 }

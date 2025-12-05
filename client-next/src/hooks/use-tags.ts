@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { tagsApi, tagMappingApi } from "@/lib/api";
+import { tagMappingApi, tagsApi } from "@/lib/api";
 import { Tag } from "@/types";
+import { useEffect, useState } from "react";
 
 export function useTags() {
     const [tags, setTags] = useState<Tag[]>([]);

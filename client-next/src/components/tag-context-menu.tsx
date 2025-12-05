@@ -1,13 +1,15 @@
 "use client";
-import type { Tag, TravelItem } from "@/types";
 
-import { useState } from "react";
-import { X, Check } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+
 import { CreateTagDialog } from "@/components/create-tag-dialog";
-import * as React from "react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTags } from "@/hooks/use-tags";
+
+import type { TravelItem } from "@/types";
+import { Check } from "lucide-react";
+import * as React from "react";
+import { useState } from "react";
 
 interface TagContextMenuProps {
     item: TravelItem;
@@ -20,7 +22,6 @@ export function TagContextMenu({
                                    item,
                                    isOpen,
                                    onClose,
-                                   onTagCreated,
                                }: TagContextMenuProps) {
     const { tags, updateTags, loading } = useTags();
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
@@ -44,12 +45,13 @@ export function TagContextMenu({
             .map(tag => tag.id);
         const tagsToDelete = itemTags.filter(tag => !selectedTags.includes(tag.name))
             .map(tag => tag.id);
+
         await updateTags(item.id, tagsToCreate, tagsToDelete);
         onClose();
     };
 
     const handleTagCreated = (newTag: { id: number; name: string }) => {
-        onTagCreated(newTag);
+        //onTagCreated(newTag);
         /*if (!tags.includes(newTag.name)) {
             setTags([...tags, newTag.name])
         }*/

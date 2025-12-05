@@ -7,15 +7,14 @@ import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
 import { TagContextMenu } from '@/components/tag-context-menu';
 import { TagFilter } from '@/components/tag-filter';
-import {Tag, TravelItem} from "@/types";
+import { TravelItem } from "@/types";
 
 export default function Home() {
-    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, updateTags } = useItems();
+    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [availableTags, setAvailableTags] = useState<Tag[]>([])
 
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
@@ -64,10 +63,6 @@ export default function Home() {
         );
     };
 
-    const handleTagCreated = (newTag: { id: number; name: string }) => {
-        setAvailableTags((prev) => [...prev, newTag])
-    }
-
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -81,7 +76,8 @@ export default function Home() {
             <div className="max-w-6xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Item Manager</h1>
-                    <p className="text-muted-foreground">Drag items to organize them • Right-click to tag • Click tags to filter</p>
+                    <p className="text-muted-foreground">Drag items to organize them • Right-click to tag • Click tags
+                        to filter</p>
                 </div>
 
                 {error && (
@@ -90,12 +86,12 @@ export default function Home() {
                     </div>
                 )}
 
-                <AddItemDialog onAdd={addItem} isLoading={false} />
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-96">
+                    <AddItemDialog onAdd={addItem} isLoading={false}/>
+                    <div>Total Weight : { droppedItems.reduce((sum, current) => sum + current.weight, 0) }</div>
                     <div className="space-y-4">
                         <h2 className="font-semibold text-lg">Available Items</h2>
-                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
+                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick}/>
                         <ItemsList
                             items={filteredItems}
                             onDelete={(id) => deleteItem(id, false)}
@@ -123,14 +119,11 @@ export default function Home() {
                     item={selectedItem}
                     isOpen={isTagDialogOpen}
                     onClose={() => {
-                        setIsTagDialogOpen(false)
-                        setSelectedItem(null)
+                            setIsTagDialogOpen(false)
+                            setSelectedItem(null)
                     }}
-                    onSaveTags={updateTags}
-                    availableTags={availableTags}
-                    onTagCreated={handleTagCreated}
                 />
             )}
         </main>
-    );
+);
 }
