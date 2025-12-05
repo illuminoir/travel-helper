@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react";
-import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import React from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { tagsApi } from "@/lib/api";
+import { useTags } from "@/hooks/use-tags";
+import { useState } from "react";
 
 interface CreateTagDialogProps {
     isOpen: boolean;
@@ -17,6 +17,7 @@ export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialo
     const [tagName, setTagName] = useState("")
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const { createTag } = useTags();
 
     const handleCreate = async () => {
         if (!tagName.trim()) {
@@ -28,8 +29,7 @@ export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialo
         setError(null)
 
         try {
-            const newTag = await tagsApi.create(tagName.trim())
-            onCreateTag(newTag)
+            await createTag(tagName);
             setTagName("")
             onClose()
         } catch (err) {

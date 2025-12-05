@@ -40,9 +40,15 @@ export function useTags() {
         }
     };
 
+    const createTag = async (tagName: string) => {
+        await tagsApi.create(tagName);
+        //TODO error handling
+    }
+
     return {
         tags,
         updateTags,
+        createTag,
         loading,
         error,
     };
