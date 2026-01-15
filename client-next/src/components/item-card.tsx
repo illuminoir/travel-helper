@@ -14,6 +14,7 @@ interface ItemCardProps {
     onDragStart?: (e: React.DragEvent) => void;
     onRightClick?: (item: TravelItem) => void;
     onTagClick?: (tag: string) => void;
+    onDoubleClick?: (item: TravelItem) => void;
     draggable?: boolean;
     isDropped?: boolean;
 }
@@ -24,6 +25,7 @@ export function ItemCard({
                              onDragStart,
                              onRightClick,
                              onTagClick,
+                             onDoubleClick,
                              draggable = false,
                              isDropped = false,
                          }: ItemCardProps) {
@@ -32,12 +34,17 @@ export function ItemCard({
         onRightClick?.(item)
     }
 
+    const handleDoubleClick = () => {
+        onDoubleClick?.(item)
+    }
+
     return (
         <Card
             className="relative p-4 flex flex-col gap-3 cursor-move hover:shadow-md transition-shadow"
             draggable={draggable}
             onDragStart={onDragStart}
             onContextMenu={handleContextMenu}
+            onDoubleClick={handleDoubleClick}
         >
             <Button
                 variant="ghost"

@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react';
-import { itemsApi } from '@/lib/api';
-import { TravelItem } from '@/types';
+import { useState, useEffect, useCallback } from 'react'
+import { itemsApi } from '@/lib/api'
+import type { TravelItem } from '@/types'
 
 export function useItems() {
-    const [items, setItems] = useState<TravelItem[]>([]);
-    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [items, setItems] = useState<TravelItem[]>([])
+    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     // Load items from API and localStorage
     useEffect(() => {
@@ -16,8 +16,8 @@ export function useItems() {
             try {
                 const apiItems = await itemsApi.getAll()
 
-                const saved = localStorage.getItem('droppedItems');
-                let droppedItemsData: TravelItem[] = [];
+                const saved = localStorage.getItem('droppedItems')
+                let droppedItemsData: TravelItem[] = []
 
                 if (saved) {
                     try {
@@ -45,53 +45,48 @@ export function useItems() {
 
     // Now persistence happens when items change via moveItem
     useEffect(() => {
-        localStorage.setItem('droppedItems', JSON.stringify(droppedItems));
-    }, [droppedItems]);
+        localStorage.setItem('droppedItems', JSON.stringify(droppedItems))
+    }, [droppedItems])
 
-    const deleteItem = useCallback(
-        async (id: number, isDropped: boolean) => {
-            if (isDropped) {
-                setDroppedItems((prev) => prev.filter((item) => item.id !== id));
-            } else {
-                try {
-                    await itemsApi.delete(id);
-                    setItems((prev) => prev.filter((item) => item.id !== id));
-                } catch (err) {
-                    setError(err instanceof Error ? err.message : 'Failed to delete item');
-                }
+    const deleteItem = useCallback(async (id: number, isDropped: boolean) => {
+        if (isDropped) {
+            setDroppedItems((prev) => prev.filter((item) => item.id !== id))
+        } else {
+            try {
+                await itemsApi.delete(id)
+                setItems((prev) => prev.filter((item) => item.id !== id))
+            } catch (err) {
+                setError(err instanceof Error ? err.message : 'Failed to delete item')
             }
-        },
-        []
-    );
+        }
+    }, [])
 
     const addItem = useCallback(
         async (name: string, weight: number) => {
             try {
-                await itemsApi.add(name, weight);
-                const updatedItems = await itemsApi.getAll();
-                setItems(updatedItems.filter(item =>
-                    !droppedItems.some(d => d.id === item.id)
-                ));
-                setError(null);
+                await itemsApi.add(name, weight)
+                const updatedItems = await itemsApi.getAll()
+                setItems(updatedItems.filter((item) => !droppedItems.some((d) => d.id === item.id)).sort((a, b) => a.id - b.id))
+                setError(null)
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to delete item')
             }
         },
-        [droppedItems]
-    );
+        [droppedItems],
+    )
 
     const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
         if (toDropped) {
             setItems((prev) => prev.filter((i) => i.id !== item.id))
             setDroppedItems((prev) => {
                 const alreadyExists = prev.some((i) => i.id === item.id)
-                return alreadyExists ? prev : [...prev, item]
+                return alreadyExists ? prev : [...prev, item].sort((a, b) => a.id - b.id)
             })
         } else {
             setDroppedItems((prev) => prev.filter((i) => i.id !== item.id))
             setItems((prev) => {
                 const alreadyExists = prev.some((i) => i.id === item.id)
-                return alreadyExists ? prev : [...prev, item]
+                return alreadyExists ? prev : [...prev, item].sort((a, b) => a.id - b.id)
             })
         }
     }, [])

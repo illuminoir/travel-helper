@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState } from 'react';
 import { useItems } from '@/hooks/use-items';
 import { AddItemDialog } from '@/components/add-item-dialog';
@@ -15,7 +16,6 @@ export default function Home() {
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
         e.dataTransfer.effectAllowed = 'move';
@@ -49,13 +49,20 @@ export default function Home() {
         setIsTagDialogOpen(true);
     };
 
-    const filteredItems = selectedTags.length === 0
-        ? items
-        : items.filter((item) =>
-            selectedTags.every((tag) =>
-                Array.isArray(item.tags) && item.tags.map(tag => tag.name).includes(tag)
-            )
-        );
+    const handleDoubleClick = (item: TravelItem) => {
+        moveItem(item, true);
+    };
+
+    const handleDoubleClickDropped = (item: TravelItem) => {
+        moveItem(item, false);
+    };
+
+    const filteredItems =
+        selectedTags.length === 0
+            ? items
+            : items.filter((item) =>
+                selectedTags.every((tag) => Array.isArray(item.tags) && item.tags.map((tag) => tag.name).includes(tag)),
+            );
 
     const handleTagClick = (tag: string) => {
         setSelectedTags((prev) =>
@@ -76,8 +83,9 @@ export default function Home() {
             <div className="max-w-6xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Item Manager</h1>
-                    <p className="text-muted-foreground">Drag items to organize them • Right-click to tag • Click tags
-                        to filter</p>
+                    <p className="text-muted-foreground">
+                        Drag items to organize them • Double-click to move • Right-click to tag • Click tags to filter
+                    </p>
                 </div>
 
                 {error && (
@@ -87,17 +95,18 @@ export default function Home() {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-96">
-                    <AddItemDialog onAdd={addItem} isLoading={false}/>
-                    <div>Total Weight : { droppedItems.reduce((sum, current) => sum + current.weight, 0) }</div>
+                    <AddItemDialog onAdd={addItem} isLoading={false} />
+                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + current.weight, 0)}</div>
                     <div className="space-y-4">
                         <h2 className="font-semibold text-lg">Available Items</h2>
-                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick}/>
+                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
                         <ItemsList
                             items={filteredItems}
                             onDelete={(id) => deleteItem(id, false)}
                             onDragStart={handleDragStart}
                             onRightClick={handleRightClick}
                             onTagClick={handleTagClick}
+                            onDoubleClick={handleDoubleClick}
                         />
                     </div>
 
@@ -110,6 +119,7 @@ export default function Home() {
                         onDragLeave={handleDragLeave}
                         onClearAll={clearDropped}
                         onRightClick={handleRightClick}
+                        onDoubleClick={handleDoubleClickDropped}
                     />
                 </div>
             </div>
@@ -119,12 +129,12 @@ export default function Home() {
                     item={selectedItem}
                     isOpen={isTagDialogOpen}
                     onClose={() => {
-                            setIsTagDialogOpen(false)
-                            setSelectedItem(null)
+                        setIsTagDialogOpen(false);
+                        setSelectedItem(null);
                     }}
                     onTagCreated={() => {}}
                 />
             )}
         </main>
-);
+    );
 }

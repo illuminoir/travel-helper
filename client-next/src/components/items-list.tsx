@@ -9,6 +9,7 @@ interface ItemsListProps {
     onDelete: (id: number) => void;
     onDragStart: (e: React.DragEvent, item: TravelItem) => void;
     onRightClick?: (item: TravelItem) => void;
+    onDoubleClick?: (item: TravelItem) => void;
     onTagClick?: (tag: string) => void;
 }
 
@@ -17,7 +18,8 @@ export function ItemsList({
     onDelete,
     onDragStart,
     onRightClick,
-    onTagClick
+    onTagClick,
+    onDoubleClick,
                           }: ItemsListProps) {
     if (items.length === 0) {
         return (
@@ -38,6 +40,7 @@ export function ItemsList({
                     onRightClick={onRightClick}
                     onTagClick={onTagClick}
                     draggable
+                    onDoubleClick={onDoubleClick}
                 />
             ))}
         </div>

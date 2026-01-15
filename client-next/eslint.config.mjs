@@ -17,6 +17,7 @@ const config = [
     rules: {
       quotes: ['error', 'single', { avoidEscape: true }],
       'object-curly-spacing': ['error', 'always'],
+      semi: ['error', 'always'],
     },
   },
 ];

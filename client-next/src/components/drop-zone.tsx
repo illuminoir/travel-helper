@@ -13,6 +13,7 @@ interface DropZoneProps {
     isDragOver: boolean;
     onDragOver: (e: React.DragEvent) => void;
     onDragLeave: (e: React.DragEvent) => void;
+    onDoubleClick?: (item: TravelItem) => void;
     onClearAll: () => void;
     onRightClick?: (item: TravelItem) => void;
 }
@@ -24,9 +25,11 @@ export function DropZone({
                              isDragOver,
                              onDragOver,
                              onDragLeave,
+                             onDoubleClick,
                              onClearAll,
                              onRightClick,
                          }: DropZoneProps) {
+
     return (
         <div
             className={`flex-1 border-2 border-dashed rounded-lg p-6 transition-colors ${
@@ -74,6 +77,7 @@ export function DropZone({
                                 item={item}
                                 onDelete={onRestore}
                                 onRightClick={onRightClick}
+                                onDoubleClick={onDoubleClick}
                                 draggable={false}
                                 isDropped={true}
                             />
