@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { useTags } from "@/hooks/use-tags";
-import { useState } from "react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { useTags } from '@/hooks/use-tags';
+import { useState } from 'react';
 
 interface CreateTagDialogProps {
     isOpen: boolean;
@@ -13,15 +13,15 @@ interface CreateTagDialogProps {
     onCreateTag: (newTag: { id: number; name: string }) => void;
 }
 
-export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialogProps) {
-    const [tagName, setTagName] = useState("")
+export function CreateTagDialog({ isOpen, onClose }: CreateTagDialogProps) {
+    const [tagName, setTagName] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const { createTag } = useTags();
 
     const handleCreate = async () => {
         if (!tagName.trim()) {
-            setError("Tag name cannot be empty")
+            setError('Tag name cannot be empty')
             return
         }
 
@@ -30,24 +30,24 @@ export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialo
 
         try {
             await createTag(tagName);
-            setTagName("")
+            setTagName('')
             onClose()
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to create tag")
+            setError(err instanceof Error ? err.message : 'Failed to create tag')
         } finally {
             setLoading(false)
         }
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
+        if (e.key === 'Enter') {
             handleCreate()
         }
     }
 
     const handleDialogChange = (open: boolean) => {
         if (!open) {
-            setTagName("")
+            setTagName('')
             setError(null)
             onClose()
         }
@@ -75,7 +75,7 @@ export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialo
                             Cancel
                         </Button>
                         <Button onClick={handleCreate} disabled={loading}>
-                            {loading ? "Creating..." : "Create"}
+                            {loading ? 'Creating...' : 'Create'}
                         </Button>
                     </div>
                 </div>

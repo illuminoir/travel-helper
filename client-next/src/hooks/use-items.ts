@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback } from "react";
-import { itemsApi } from "@/lib/api";
-import { TravelItem } from "@/types";
+import { useState, useEffect, useCallback } from 'react';
+import { itemsApi } from '@/lib/api';
+import { TravelItem } from '@/types';
 
 export function useItems() {
     const [items, setItems] = useState<TravelItem[]>([]);
@@ -23,7 +23,7 @@ export function useItems() {
                     try {
                         droppedItemsData = JSON.parse(saved)
                     } catch {
-                        localStorage.removeItem("droppedItems")
+                        localStorage.removeItem('droppedItems')
                     }
                 }
 
@@ -34,7 +34,7 @@ export function useItems() {
                 setDroppedItems(droppedItemsData)
                 setError(null)
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load items")
+                setError(err instanceof Error ? err.message : 'Failed to load items')
             } finally {
                 setLoading(false)
             }
@@ -74,7 +74,7 @@ export function useItems() {
                 ));
                 setError(null);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to delete item")
+                setError(err instanceof Error ? err.message : 'Failed to delete item')
             }
         },
         [droppedItems]

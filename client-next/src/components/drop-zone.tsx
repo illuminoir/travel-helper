@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import type React from "react";
-import type { TravelItem } from "@/types";
+import type React from 'react';
+import type { TravelItem } from '@/types';
 
-import { ItemCard } from "./item-card";
-import { Button } from "@/components/ui/button";
+import { ItemCard } from './item-card';
+import { Button } from '@/components/ui/button';
 
 interface DropZoneProps {
     items: TravelItem[];
@@ -31,14 +31,14 @@ export function DropZone({
         <div
             className={`flex-1 border-2 border-dashed rounded-lg p-6 transition-colors ${
                 isDragOver
-                    ? "border-primary bg-primary/5"
-                    : "border-muted-foreground/20 bg-muted/50"
+                    ? 'border-primary bg-primary/5'
+                    : 'border-muted-foreground/20 bg-muted/50'
             }`}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={(e) => {
                 e.preventDefault();
-                const data = e.dataTransfer.getData("application/json");
+                const data = e.dataTransfer.getData('application/json');
                 if (data) {
                     const item = JSON.parse(data);
                     onDrop(item);

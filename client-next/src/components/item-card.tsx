@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import type React from "react";
+import type React from 'react';
 
 import { Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { TravelItem } from "@/types";
+import { TravelItem } from '@/types';
 
 
 interface ItemCardProps {
@@ -45,7 +45,7 @@ export function ItemCard({
                 onClick={() => onDelete(item.id)}
                 className="absolute top-2 right-2 text-base leading-none"
             >
-                {isDropped ? "x" : <Trash2 className="w-4 h-4" />}
+                {isDropped ? 'x' : <Trash2 className="w-4 h-4" />}
             </Button>
 
             <div className="flex items-center justify-between gap-4">

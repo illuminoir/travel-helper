@@ -7,7 +7,7 @@ import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
 import { TagContextMenu } from '@/components/tag-context-menu';
 import { TagFilter } from '@/components/tag-filter';
-import { TravelItem } from "@/types";
+import { TravelItem } from '@/types';
 
 export default function Home() {
     const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
@@ -122,6 +122,7 @@ export default function Home() {
                             setIsTagDialogOpen(false)
                             setSelectedItem(null)
                     }}
+                    onTagCreated={() => {}}
                 />
             )}
         </main>

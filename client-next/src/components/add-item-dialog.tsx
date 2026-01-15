@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import React from "react";
+import React from 'react';
 
-import { useState } from "react";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface AddItemDialogProps {
     onAdd: (name: string, weight: number) => Promise<void>
@@ -15,8 +15,8 @@ interface AddItemDialogProps {
 
 export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
     const [open, setOpen] = useState(false)
-    const [name, setName] = useState("")
-    const [weight, setWeight] = useState("")
+    const [name, setName] = useState('')
+    const [weight, setWeight] = useState('')
     const [error, setError] = useState<string | null>(null)
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -24,13 +24,13 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
         setError(null)
 
         if (!name.trim() || !weight) {
-            setError("All fields are required")
+            setError('All fields are required')
             return
         }
 
         const weightNum = Number.parseFloat(weight)
         if (isNaN(weightNum) || weightNum <= 0) {
-            setError("Weight must be a positive number")
+            setError('Weight must be a positive number')
             return
         }
 
@@ -40,7 +40,7 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
             setWeight('');
             setOpen(false);
         } catch {
-            setError("Failed to add item")
+            setError('Failed to add item')
         }
     }
 
@@ -79,7 +79,7 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
                     </div>
                     {error && <p className="text-sm text-destructive">{error}</p>}
                     <Button type="submit" disabled={isLoading} className="w-full">
-                        {isLoading ? "Adding..." : "Add Item"}
+                        {isLoading ? 'Adding...' : 'Add Item'}
                     </Button>
                 </form>
             </DialogContent>

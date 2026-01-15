@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
 
-import { CreateTagDialog } from "@/components/create-tag-dialog";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useTags } from "@/hooks/use-tags";
+import { CreateTagDialog } from '@/components/create-tag-dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useTags } from '@/hooks/use-tags';
 
-import type { TravelItem } from "@/types";
-import { Check } from "lucide-react";
-import * as React from "react";
-import { useState } from "react";
+import type { TravelItem } from '@/types';
+import { Check } from 'lucide-react';
+import * as React from 'react';
+import { useState } from 'react';
 
 interface TagContextMenuProps {
     item: TravelItem;
@@ -55,6 +55,7 @@ export function TagContextMenu({
         /*if (!tags.includes(newTag.name)) {
             setTags([...tags, newTag.name])
         }*/
+        console.log(newTag);
         setIsCreateTagDialogOpen(false);
     };
 
@@ -64,7 +65,7 @@ export function TagContextMenu({
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>Tag Item</DialogTitle>
-                        <DialogDescription>Add tags to: {String(item.name || "Item")}</DialogDescription>
+                        <DialogDescription>Add tags to: {String(item.name || 'Item')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <Button onClick={() => setIsCreateTagDialogOpen(true)} variant="outline" className="w-full">
@@ -108,7 +109,7 @@ export function TagContextMenu({
                                 Cancel
                             </Button>
                             <Button onClick={handleSave} disabled={loading}>
-                                {loading ? "Saving..." : "Save Tags"}
+                                {loading ? 'Saving...' : 'Save Tags'}
                             </Button>
                         </div>
                     </div>

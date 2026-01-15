@@ -1,6 +1,6 @@
-import { tagMappingApi, tagsApi } from "@/lib/api";
-import { Tag } from "@/types";
-import { useEffect, useState } from "react";
+import { tagMappingApi, tagsApi } from '@/lib/api';
+import { Tag } from '@/types';
+import { useEffect, useState } from 'react';
 
 export function useTags() {
     const [tags, setTags] = useState<Tag[]>([]);
@@ -15,7 +15,7 @@ export function useTags() {
                 setTags(apiTags);
                 setError(null);
             } catch (err) {
-                setError(err instanceof Error ? err.message : "Failed to load items");
+                setError(err instanceof Error ? err.message : 'Failed to load items');
             } finally {
                 setLoading(false);
             }
