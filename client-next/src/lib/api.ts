@@ -38,6 +38,8 @@ export const tagsApi = {
             method: 'PUT',
             body: JSON.stringify({ name }),
         }),
+    delete: (id: number) =>
+        apiCall<void>(`/tags/${id}`, { method: 'DELETE' }),
 };
 
 export const tagMappingApi = {

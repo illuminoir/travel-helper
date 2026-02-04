@@ -4,54 +4,52 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useTags } from '@/hooks/use-tags';
 import { useState } from 'react';
 
 interface CreateTagDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateTag: (newTag: { id: number; name: string }) => void;
+    onCreateTag: (tagName: string) => Promise<void>;
 }
 
-export function CreateTagDialog({ isOpen, onClose }: CreateTagDialogProps) {
-    const [tagName, setTagName] = useState('')
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState<string | null>(null)
-    const { createTag } = useTags();
+export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialogProps) {
+    const [tagName, setTagName] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const handleCreate = async () => {
         if (!tagName.trim()) {
-            setError('Tag name cannot be empty')
-            return
+            setError('Tag name cannot be empty');
+            return;
         }
 
-        setLoading(true)
-        setError(null)
+        setLoading(true);
+        setError(null);
 
         try {
-            await createTag(tagName);
-            setTagName('')
-            onClose()
+            await onCreateTag(tagName);
+            setTagName('');
+            onClose();
         } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to create tag')
+            setError(err instanceof Error ? err.message : 'Failed to create tag');
         } finally {
-            setLoading(false)
+            setLoading(false);
         }
-    }
+    };
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
-            handleCreate()
+            handleCreate();
         }
-    }
+    };
 
     const handleDialogChange = (open: boolean) => {
         if (!open) {
-            setTagName('')
-            setError(null)
-            onClose()
+            setTagName('');
+            setError(null);
+            onClose();
         }
-    }
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -81,5 +79,5 @@ export function CreateTagDialog({ isOpen, onClose }: CreateTagDialogProps) {
                 </div>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

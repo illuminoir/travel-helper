@@ -30,13 +30,13 @@ export function ItemCard({
                              isDropped = false,
                          }: ItemCardProps) {
     const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault()
-        onRightClick?.(item)
-    }
+        e.preventDefault();
+        onRightClick?.(item);
+    };
 
     const handleDoubleClick = () => {
-        onDoubleClick?.(item)
-    }
+        onDoubleClick?.(item);
+    };
 
     return (
         <Card
@@ -74,7 +74,7 @@ export function ItemCard({
                             >
                                 {tag.name}
                             </button>
-                        )
+                        );
                     })}
                 </div>
             )}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { TravelItem } from '@/types';
-import { ItemCard } from './item-card'
+import { ItemCard } from './item-card';
 
 interface ItemsListProps {
     items: TravelItem[];

@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import React from 'react';
 
@@ -14,24 +14,24 @@ interface AddItemDialogProps {
 }
 
 export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
-    const [open, setOpen] = useState(false)
-    const [name, setName] = useState('')
-    const [weight, setWeight] = useState('')
-    const [error, setError] = useState<string | null>(null)
+    const [open, setOpen] = useState(false);
+    const [name, setName] = useState('');
+    const [weight, setWeight] = useState('');
+    const [error, setError] = useState<string | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setError(null)
+        e.preventDefault();
+        setError(null);
 
         if (!name.trim() || !weight) {
-            setError('All fields are required')
-            return
+            setError('All fields are required');
+            return;
         }
 
-        const weightNum = Number.parseFloat(weight)
+        const weightNum = Number.parseFloat(weight);
         if (isNaN(weightNum) || weightNum <= 0) {
-            setError('Weight must be a positive number')
-            return
+            setError('Weight must be a positive number');
+            return;
         }
 
         try {
@@ -40,9 +40,9 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
             setWeight('');
             setOpen(false);
         } catch {
-            setError('Failed to add item')
+            setError('Failed to add item');
         }
-    }
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -84,5 +84,5 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
                 </form>
             </DialogContent>
         </Dialog>
-    )
+    );
 }

@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { X } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface TagFilterProps {
     selectedTags: string[]
@@ -10,7 +10,7 @@ interface TagFilterProps {
 
 export function TagFilter({ selectedTags, onTagRemove }: TagFilterProps) {
     if (selectedTags.length === 0) {
-        return null
+        return null;
     }
 
     return (
@@ -22,5 +22,5 @@ export function TagFilter({ selectedTags, onTagRemove }: TagFilterProps) {
                 </Button>
             ))}
         </div>
-    )
+    );
 }

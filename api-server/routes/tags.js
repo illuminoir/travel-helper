@@ -37,4 +37,15 @@ router.put("/", async (req, res) => {
     }
 });
 
+router.delete("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query("DELETE FROM tags WHERE id = ?", [id]);
+        res.json({ success: true, message: "Item deleted." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
 export default router;

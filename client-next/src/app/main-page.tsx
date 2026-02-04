@@ -11,7 +11,7 @@ import { TagFilter } from '@/components/tag-filter';
 import { TravelItem } from '@/types';
 
 export default function Home() {
-    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped } = useItems();
+    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, refetchItems } = useItems();
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -133,6 +133,7 @@ export default function Home() {
                         setSelectedItem(null);
                     }}
                     onTagCreated={() => {}}
+                    refetchItems={refetchItems}
                 />
             )}
         </main>
