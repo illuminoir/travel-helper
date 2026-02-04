@@ -23,7 +23,7 @@ export function TagContextMenu({
                                    isOpen,
                                    onClose,
                                }: TagContextMenuProps) {
-    const { tags, updateTags, loading } = useTags();
+    const { tags, updateTags, createTag, loading } = useTags();
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
 
@@ -50,12 +50,8 @@ export function TagContextMenu({
         onClose();
     };
 
-    const handleTagCreated = (newTag: { id: number; name: string }) => {
-        //onTagCreated(newTag);
-        /*if (!tags.includes(newTag.name)) {
-            setTags([...tags, newTag.name])
-        }*/
-        console.log(newTag);
+    const handleCreateTag = async (tagName: string) => {
+        await createTag(tagName);
         setIsCreateTagDialogOpen(false);
     };
 
@@ -119,7 +115,7 @@ export function TagContextMenu({
             <CreateTagDialog
                 isOpen={isCreateTagDialogOpen}
                 onClose={() => setIsCreateTagDialogOpen(false)}
-                onCreateTag={handleTagCreated}
+                onCreateTag={handleCreateTag}
             />
         </>
     );

@@ -4,20 +4,18 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { useTags } from '@/hooks/use-tags';
 import { useState } from 'react';
 
 interface CreateTagDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onCreateTag: (newTag: { id: number; name: string }) => void;
+    onCreateTag: (tagName: string) => Promise<void>;
 }
 
-export function CreateTagDialog({ isOpen, onClose }: CreateTagDialogProps) {
+export function CreateTagDialog({ isOpen, onClose, onCreateTag }: CreateTagDialogProps) {
     const [tagName, setTagName] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
-    const { createTag } = useTags();
 
     const handleCreate = async () => {
         if (!tagName.trim()) {
@@ -29,7 +27,7 @@ export function CreateTagDialog({ isOpen, onClose }: CreateTagDialogProps) {
         setError(null)
 
         try {
-            await createTag(tagName);
+            await onCreateTag(tagName);
             setTagName('')
             onClose()
         } catch (err) {
