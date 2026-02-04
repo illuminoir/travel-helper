@@ -48,10 +48,17 @@ export function useTags() {
         await fetchTags();
     }
 
+    const deleteTag = async (tagId: number) => {
+        await tagsApi.delete(tagId);
+        // Refetch all tags after deletion
+        await fetchTags();
+    }
+
     return {
         tags,
         updateTags,
         createTag,
+        deleteTag,
         refetchTags: fetchTags,
         loading,
         error,

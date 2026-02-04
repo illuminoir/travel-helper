@@ -4,10 +4,11 @@
 import { CreateTagDialog } from '@/components/create-tag-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { useTags } from '@/hooks/use-tags';
 
-import type { TravelItem } from '@/types';
-import { Check } from 'lucide-react';
+import type { Tag, TravelItem } from '@/types';
+import { Check, Trash2 } from 'lucide-react';
 import * as React from 'react';
 import { useState } from 'react';
 
@@ -23,7 +24,7 @@ export function TagContextMenu({
                                    isOpen,
                                    onClose,
                                }: TagContextMenuProps) {
-    const { tags, updateTags, createTag, loading } = useTags();
+    const { tags, updateTags, createTag, deleteTag, loading } = useTags();
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
 
@@ -55,6 +56,12 @@ export function TagContextMenu({
         setIsCreateTagDialogOpen(false);
     };
 
+    const handleDeleteTag = async (tag: Tag) => {
+        await deleteTag(tag.id);
+        // Remove from selected tags if it was selected
+        setSelectedTags(prev => prev.filter(t => t !== tag.name));
+    };
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -75,15 +82,27 @@ export function TagContextMenu({
                                     <p className="text-sm text-muted-foreground">No tags available</p>
                                 ) : (
                                     tags.map((tag) => (
-                                        <button
-                                            key={tag.id}
-                                            onClick={() => handleTagToggle(tag.name)}
-                                            className="w-full text-left px-3 py-2 rounded-md hover:bg-muted flex items-center justify-between transition-colors"
-                                        >
-                                            <span className="text-sm">{tag.name}</span>
-                                            {selectedTags.includes(tag.name) &&
-                                                <Check className="w-4 h-4 text-green-600"/>}
-                                        </button>
+                                        <ContextMenu key={tag.id}>
+                                            <ContextMenuTrigger asChild>
+                                                <button
+                                                    onClick={() => handleTagToggle(tag.name)}
+                                                    className="w-full text-left px-3 py-2 rounded-md hover:bg-muted flex items-center justify-between transition-colors"
+                                                >
+                                                    <span className="text-sm">{tag.name}</span>
+                                                    {selectedTags.includes(tag.name) &&
+                                                        <Check className="w-4 h-4 text-green-600"/>}
+                                                </button>
+                                            </ContextMenuTrigger>
+                                            <ContextMenuContent>
+                                                <ContextMenuItem
+                                                    onClick={() => handleDeleteTag(tag)}
+                                                    className="text-destructive focus:text-destructive"
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Delete
+                                                </ContextMenuItem>
+                                            </ContextMenuContent>
+                                        </ContextMenu>
                                     ))
                                 )}
                             </div>
