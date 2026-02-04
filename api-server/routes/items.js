@@ -24,7 +24,8 @@ router.get("/", async (req, res) => {
                         `SELECT * FROM tags WHERE id IN (${tagIds.map(() => '?').join(',')})`,
                         tagIds
                     );
-                    tags = tagRows;
+                    tags = tagRows.sort((a, b) => a.name.localeCompare(b.name));
+
                 }
 
                 return {
