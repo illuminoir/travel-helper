@@ -43,10 +43,9 @@ export function useTags() {
     };
 
     const createTag = async (tagName: string) => {
-        const newTag = await tagsApi.create(tagName);
-        // Update local state with the new tag, sorted by name
-        setTags(prevTags => sortTagsByName([...prevTags, newTag]));
-        return newTag;
+        await tagsApi.create(tagName);
+        // Refetch all tags since the API doesn't return the new tag with its ID
+        await fetchTags();
     }
 
     return {
