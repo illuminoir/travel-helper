@@ -10,38 +10,38 @@ export function useItems() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
+    const fetchItems = useCallback(async () => {
+        try {
+            const apiItems = await itemsApi.getAll()
+
+            const saved = localStorage.getItem('droppedItems')
+            let droppedItemsData: TravelItem[] = []
+
+            if (saved) {
+                try {
+                    droppedItemsData = JSON.parse(saved)
+                } catch {
+                    localStorage.removeItem('droppedItems')
+                }
+            }
+
+            const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id))
+            const availableItems = apiItems.filter((item) => !droppedIds.has(item.id))
+
+            setItems(availableItems)
+            setDroppedItems(droppedItemsData)
+            setError(null)
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to load items')
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
     // Load items from API and localStorage
     useEffect(() => {
-        const loadData = async () => {
-            try {
-                const apiItems = await itemsApi.getAll()
-
-                const saved = localStorage.getItem('droppedItems')
-                let droppedItemsData: TravelItem[] = []
-
-                if (saved) {
-                    try {
-                        droppedItemsData = JSON.parse(saved)
-                    } catch {
-                        localStorage.removeItem('droppedItems')
-                    }
-                }
-
-                const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id))
-                const availableItems = apiItems.filter((item) => !droppedIds.has(item.id))
-
-                setItems(availableItems)
-                setDroppedItems(droppedItemsData)
-                setError(null)
-            } catch (err) {
-                setError(err instanceof Error ? err.message : 'Failed to load items')
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        loadData()
-    }, [])
+        fetchItems()
+    }, [fetchItems])
 
     // Now persistence happens when items change via moveItem
     useEffect(() => {
@@ -104,5 +104,6 @@ export function useItems() {
         addItem,
         moveItem,
         clearDropped,
+        refetchItems: fetchItems,
     }
 }
