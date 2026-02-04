@@ -16,17 +16,7 @@ export function useItems() {
         try {
             const apiItems = await itemsApi.getAll();
 
-            const saved = localStorage.getItem('droppedItems');
-            console.log(saved);
-            let droppedItemsData: TravelItem[] = [];
-
-            if (saved) {
-                try {
-                    droppedItemsData = JSON.parse(saved);
-                } catch {
-                    localStorage.removeItem('droppedItems');
-                }
-            }
+            const droppedItemsData: TravelItem[] = [];
 
             const droppedIds = new Set(droppedItemsData.map((item: TravelItem) => item.id));
             const availableItems = apiItems.filter((item) => !droppedIds.has(item.id));
@@ -45,11 +35,6 @@ export function useItems() {
     useEffect(() => {
         fetchItems();
     }, [fetchItems]);
-
-    // Now persistence happens when items change via moveItem
-    useEffect(() => {
-        localStorage.setItem('droppedItems', JSON.stringify(droppedItems));
-    }, [droppedItems]);
 
     const deleteItem = useCallback(async (id: number, isDropped: boolean) => {
         if (isDropped) {
@@ -96,7 +81,8 @@ export function useItems() {
 
     const clearDropped = useCallback(() => {
         setDroppedItems([]);
-    }, []);
+        fetchItems();
+    }, [fetchItems]);
 
     return {
         items,
