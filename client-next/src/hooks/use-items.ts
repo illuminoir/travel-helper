@@ -31,7 +31,7 @@ export function useItems() {
         }
     }, []);
 
-    // Load items from API and localStorage
+    // Load items from API
     useEffect(() => {
         fetchItems();
     }, [fetchItems]);
