@@ -127,6 +127,7 @@ export default function Home() {
             {selectedItem && (
                 <TagContextMenu
                     item={selectedItem}
+                    items={items}
                     isOpen={isTagDialogOpen}
                     onClose={() => {
                         setIsTagDialogOpen(false);

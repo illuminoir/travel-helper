@@ -14,6 +14,7 @@ import { useState } from 'react';
 
 interface TagContextMenuProps {
     item: TravelItem;
+    items: TravelItem[];
     isOpen: boolean;
     onClose: () => void;
     onTagCreated: (tag: { id: number; name: string }) => void;
@@ -22,6 +23,7 @@ interface TagContextMenuProps {
 
 export function TagContextMenu({
                                    item,
+                                   items,
                                    isOpen,
                                    onClose,
                                    refetchItems,
@@ -29,6 +31,7 @@ export function TagContextMenu({
     const { tags, updateTags, createTag, deleteTag, loading } = useTags();
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
+    const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
 
     const handleTagToggle = (tagName: string) => {
         setSelectedTags(prevTags =>
@@ -59,11 +62,26 @@ export function TagContextMenu({
         setIsCreateTagDialogOpen(false);
     };
 
+    const isTagInUse = (tagId: number) => {
+        return items.some(item =>
+            item.tags.some(tag => tag.id === tagId)
+        );
+    };
+
     const handleDeleteTag = async (tag: Tag) => {
         await deleteTag(tag.id);
-        // Remove from selected tags if it was selected
         setSelectedTags(prev => prev.filter(t => t !== tag.name));
         refetchItems();
+    };
+
+    const handleDeleteClick = (tag: Tag) => {
+        if (isTagInUse(tag.id)) {
+            // Needs warning
+            setTagToDelete(tag);
+        } else {
+            // Safe to delete immediately
+            handleDeleteTag(tag);
+        }
     };
 
     return (
@@ -99,7 +117,7 @@ export function TagContextMenu({
                                             </ContextMenuTrigger>
                                             <ContextMenuContent>
                                                 <ContextMenuItem
-                                                    onClick={() => handleDeleteTag(tag)}
+                                                    onClick={() => handleDeleteClick(tag)}
                                                     className="text-destructive focus:text-destructive"
                                                 >
                                                     <Trash2 className="w-4 h-4 mr-2" />
@@ -134,6 +152,41 @@ export function TagContextMenu({
                     </div>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={!!tagToDelete} onOpenChange={(open) => !open && setTagToDelete(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Tag?</DialogTitle>
+                        <DialogDescription>
+                            {`Are you sure you want to delete "${tagToDelete?.name}"?`}
+                            <br />
+                            This will remove it from all items and cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setTagToDelete(null)}
+                            disabled={loading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                if (!tagToDelete) return;
+                                await handleDeleteTag(tagToDelete);
+                                setTagToDelete(null); // close dialog
+                            }}
+                            disabled={loading}
+                        >
+                            {loading ? 'Deleting...' : 'Delete'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
 
             <CreateTagDialog
                 isOpen={isCreateTagDialogOpen}
