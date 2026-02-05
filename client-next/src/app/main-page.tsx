@@ -96,7 +96,7 @@ export default function Home() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-96">
                     <AddItemDialog onAdd={addItem} isLoading={false} />
-                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + current.weight, 0)}</div>
+                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0)}</div>
                     <div className="space-y-4">
                         <h2 className="font-semibold text-lg">Available Items</h2>
                         <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
