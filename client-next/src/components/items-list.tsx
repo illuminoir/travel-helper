@@ -30,7 +30,7 @@ export function ItemsList({
     }
 
     return (
-        <div className="space-y-2">
+        <div className="overflow-y-auto pr-2 space-y-2">
             {items.map((item) => (
                 <ItemCard
                     key={item.id}
@@ -45,4 +45,6 @@ export function ItemsList({
             ))}
         </div>
     );
+
+
 }
