@@ -93,11 +93,11 @@ export default function Home() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
-                    <AddItemDialog onAdd={addItem} isLoading={false} />
-                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0)}</div>
+                <AddItemDialog onAdd={addItem} isLoading={false} />
+                <div>Total Weight : {droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0)}</div>
 
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-16rem)]">
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 flex-1 bg-card">
                         <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
                         <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
                         <div className="flex-1 min-h-0 overflow-y-auto mt-2">
@@ -113,7 +113,7 @@ export default function Home() {
                     </div>
 
                     <div
-                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${
+                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 flex-1 transition-colors ${
                             isDragOver
                                 ? 'border-primary bg-primary/5'
                                 : 'border-border bg-card'
