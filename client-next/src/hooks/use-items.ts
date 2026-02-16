@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { itemsApi } from '@/lib/api';
+import {itemsApi, tagMappingApi} from '@/lib/api';
 import { TravelItem } from '@/types';
 
 const sortItemsByName = (items: TravelItem[]) => [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -49,6 +49,7 @@ export function useItems() {
         } else {
             try {
                 await itemsApi.delete(id);
+                await tagMappingApi.removeAllTagsOnItem(id);
                 setItems((prev) => prev.filter((item) => item.id !== id));
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to delete item');
