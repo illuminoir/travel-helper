@@ -53,4 +53,12 @@ export const tagMappingApi = {
             method: 'DELETE',
             body: JSON.stringify({ itemId, tagId })
         }),
+    removeAllTagsOnItem: (itemId: number) =>
+        apiCall<void>(`/tagMapping/${itemId}`, {
+            method: 'DELETE',
+        }),
+    getAllTagsOnItem: (itemId: number) =>
+        apiCall<void>(`/tagMapping/${itemId}`, {
+            method: 'GET',
+        }),
 };

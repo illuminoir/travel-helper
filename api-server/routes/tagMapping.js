@@ -32,12 +32,37 @@ router.delete("/", async (req, res) => {
     try {
         const { itemId, tagId } = req.body;
         await pool.query("DELETE FROM tag_mapping WHERE itemId = ? AND tagId = ?", [itemId, tagId]);
-        res.json({ success: true, message: "Item deleted." });
+        res.json({ success: true, message: "Mapping deleted." });
     } catch (err) {
         console.error(err);
         res.status(500).json({
             error: `Database error when deleting tag mapping for itemId ${itemId} and tagId ${tagId}`
         });
+    }
+});
+
+router.delete("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        await pool.query("DELETE FROM tag_mapping WHERE itemId = ?", [id]);
+        res.json({ success: true, message: "Mappings for item deleted." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            error: `Database error when deleting tag mapping for itemId ${itemId}`
+        });
+    }
+});
+
+//for debug purposes
+router.get("/:id", async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [mappings] = await pool.query("SELECT * FROM tag_mapping WHERE itemId = ?", [id]);
+        return res.json(mappings);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({error: "Database error when getting all mappings for item"});
     }
 });
 
