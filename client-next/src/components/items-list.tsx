@@ -8,18 +8,18 @@ interface ItemsListProps {
     items: TravelItem[];
     onDelete: (id: number) => void;
     onDragStart: (e: React.DragEvent, item: TravelItem) => void;
-    onRightClick?: (item: TravelItem) => void;
+    onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
     onDoubleClick?: (item: TravelItem) => void;
     onTagClick?: (tag: string) => void;
 }
 
 export function ItemsList({
-    items,
-    onDelete,
-    onDragStart,
-    onRightClick,
-    onTagClick,
-    onDoubleClick,
+                              items,
+                              onDelete,
+                              onDragStart,
+                              onRightClick,
+                              onTagClick,
+                              onDoubleClick,
                           }: ItemsListProps) {
     if (items.length === 0) {
         return (
@@ -45,6 +45,4 @@ export function ItemsList({
             ))}
         </div>
     );
-
-
 }

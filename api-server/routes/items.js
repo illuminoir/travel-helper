@@ -67,6 +67,36 @@ router.put("/", async (req, res) => {
     }
 });
 
+router.put("/:id", async (req, res) => {
+    const { id } = req.params;
+    const { weight } = req.body;
+
+    if (!id || typeof weight !== "number") {
+        return res.status(400).json({ error: "Missing or invalid 'id' or 'weight'" });
+    }
+
+    try {
+        const [result] = await pool.query(
+            "UPDATE travel_items SET weight = ? WHERE id = ?",
+            [weight, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: `Item with id '${id}' not found` });
+        }
+
+        res.status(200).json({
+            message: "Item updated",
+            updated: { id, weight }
+        });
+
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+
 
 router.delete("/:id", async (req, res) => {
     try {

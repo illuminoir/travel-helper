@@ -8,14 +8,20 @@ import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
 import { TagContextMenu } from '@/components/tag-context-menu';
 import { TagFilter } from '@/components/tag-filter';
+import { ItemContextMenu } from '@/components/item-context-menu';
+import { EditWeightDialog } from '@/components/edit-weight-dialog';
 import { TravelItem } from '@/types';
 
 export default function Home() {
-    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, refetchItems } = useItems();
+    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, refetchItems, updateWeight } = useItems();
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
+    const [isEditWeightOpen, setIsEditWeightOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('kg');
+
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TravelItem } | null>(null);
 
     const handleDragStart = (e: React.DragEvent, item: TravelItem) => {
         e.dataTransfer.effectAllowed = 'move';
@@ -44,9 +50,15 @@ export default function Home() {
         }
     };
 
-    const handleRightClick = (item: TravelItem) => {
-        setSelectedItem(item);
-        setIsTagDialogOpen(true);
+    const handleRightClick = (item: TravelItem, e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            setContextMenu({ x: e.clientX, y: e.clientY, item });
+            console.log('context menu set');
+        } else {
+            setSelectedItem(item);
+            setIsTagDialogOpen(true);
+        }
     };
 
     const handleDoubleClick = (item: TravelItem) => {
@@ -78,12 +90,20 @@ export default function Home() {
         );
     }
 
-    return (<main className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
+    const totalKg = droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0);
+    const convertedWeight =
+        weightUnit === 'kg' ? totalKg :
+            weightUnit === 'g'  ? totalKg * 1000 :
+                weightUnit === 'lb' ? totalKg * 2.20462 :
+                    totalKg * 35.274; // oz
+
+    return (
+        <main className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
             <div className="max-w-6xl mx-auto space-y-8">
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Item Manager</h1>
                     <p className="text-muted-foreground">
-                        Drag items to organize them • Double-click to move • Right-click to tag • Click tags to filter
+                        Drag items to organize them • Double-click to move • Right-click to edit • Click tags to filter
                     </p>
                 </div>
 
@@ -95,7 +115,20 @@ export default function Home() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
                     <AddItemDialog onAdd={addItem} isLoading={false} />
-                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0)}</div>
+                    <div className="flex items-center gap-2">
+                        <span className="font-medium">Total Weight :</span>
+                        <span>{convertedWeight.toFixed(3)} {weightUnit}</span>
+                        <select
+                            value={weightUnit}
+                            onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
+                            className="border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                        >
+                            <option value="g">g</option>
+                            <option value="kg">kg</option>
+                            <option value="lb">lb</option>
+                            <option value="oz">oz</option>
+                        </select>
+                    </div>
 
                     <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
                         <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
@@ -140,6 +173,22 @@ export default function Home() {
                 </div>
             </div>
 
+            {contextMenu && (
+                <ItemContextMenu
+                    x={contextMenu.x}
+                    y={contextMenu.y}
+                    onEditTags={() => {
+                        setSelectedItem(contextMenu.item);
+                        setIsTagDialogOpen(true);
+                    }}
+                    onEditWeight={() => {
+                        setSelectedItem(contextMenu.item);
+                        setIsEditWeightOpen(true);
+                    }}
+                    onClose={() => setContextMenu(null)}
+                />
+            )}
+
             {selectedItem && (
                 <TagContextMenu
                     item={selectedItem}
@@ -151,6 +200,21 @@ export default function Home() {
                     }}
                     onTagCreated={() => {}}
                     refetchItems={refetchItems}
+                />
+            )}
+
+            {/* Weight editing dialog */}
+            {selectedItem && isEditWeightOpen && (
+                <EditWeightDialog
+                    item={selectedItem}
+                    isOpen={isEditWeightOpen}
+                    onClose={() => {
+                        setIsEditWeightOpen(false);
+                        setSelectedItem(null);
+                    }}
+                    onSave={async (item, newWeight) => {
+                        await updateWeight(item, newWeight);
+                    }}
                 />
             )}
         </main>

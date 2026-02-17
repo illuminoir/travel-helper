@@ -55,6 +55,7 @@ export function useItems() {
                 await itemsApi.add(name, weight);
                 const updatedItems = await itemsApi.getAll();
                 setItems(updatedItems.filter((item) => !droppedItems.some((d) => d.id === item.id)).sort((a, b) => a.id - b.id));
+                await fetchItems();
                 setError(null);
             } catch (err) {
                 setError(err instanceof Error ? err.message : 'Failed to delete item');
@@ -79,6 +80,16 @@ export function useItems() {
         }
     }, []);
 
+    const updateWeight = useCallback(async (item: TravelItem, newWeight: number) => {
+        try {
+            await itemsApi.updateWeight(item.id, newWeight);
+            await fetchItems();
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to delete item');
+        }
+    }, []);
+
     const clearDropped = useCallback(() => {
         setDroppedItems([]);
         fetchItems();
@@ -92,6 +103,7 @@ export function useItems() {
         deleteItem,
         addItem,
         moveItem,
+        updateWeight,
         clearDropped,
         refetchItems: fetchItems,
     };

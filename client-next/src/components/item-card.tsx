@@ -12,7 +12,7 @@ interface ItemCardProps {
     item: TravelItem;
     onDelete: (id: number) => void;
     onDragStart?: (e: React.DragEvent) => void;
-    onRightClick?: (item: TravelItem) => void;
+    onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
     onTagClick?: (tag: string) => void;
     onDoubleClick?: (item: TravelItem) => void;
     draggable?: boolean;
@@ -31,7 +31,7 @@ export function ItemCard({
                          }: ItemCardProps) {
     const handleContextMenu = (e: React.MouseEvent) => {
         e.preventDefault();
-        onRightClick?.(item);
+        onRightClick?.(item, e);
     };
 
     const handleDoubleClick = () => {

@@ -29,6 +29,11 @@ export const itemsApi = {
             method: 'PUT',
             body: JSON.stringify({ name, weight }),
         }),
+    updateWeight: (id: number, weight: number) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ weight }),
+        }),
 };
 
 export const tagsApi = {
