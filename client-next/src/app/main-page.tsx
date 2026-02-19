@@ -1,5 +1,7 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import React from 'react';
 import { useState } from 'react';
 import { useItems } from '@/hooks/use-items';
@@ -20,6 +22,7 @@ export default function Home() {
     const [isEditWeightOpen, setIsEditWeightOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('kg');
+    const [showClearAllDialog, setShowClearAllDialog] = useState(false);
 
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TravelItem } | null>(null);
 
@@ -114,7 +117,17 @@ export default function Home() {
                 )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
-                    <AddItemDialog onAdd={addItem} isLoading={false} />
+                    <div className="flex items-center justify-between">
+                        <AddItemDialog onAdd={addItem} isLoading={false} />
+                        {items.length > 0 && (
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowClearAllDialog(true)}
+                            >
+                                Clear All Items
+                            </Button>
+                        )}
+                    </div>
                     <div className="flex items-center gap-2">
                         <span className="font-medium">Total Weight :</span>
                         <span>{Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
@@ -216,6 +229,35 @@ export default function Home() {
                     }}
                 />
             )}
+
+            <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Clear All Items?</DialogTitle>
+                        <DialogDescription>
+                            This will permanently delete all {items.length} items. This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowClearAllDialog(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={async () => {
+                                await Promise.all(items.map(item => deleteItem(item.id, false)));
+                                refetchItems();
+                                setShowClearAllDialog(false);
+                            }}
+                        >
+                            Delete All
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </main>
     );
 }
