@@ -117,7 +117,7 @@ export default function Home() {
                     <AddItemDialog onAdd={addItem} isLoading={false} />
                     <div className="flex items-center gap-2">
                         <span className="font-medium">Total Weight :</span>
-                        <span>{convertedWeight.toFixed(3)} {weightUnit}</span>
+                        <span>{Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
                         <select
                             value={weightUnit}
                             onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
@@ -203,7 +203,6 @@ export default function Home() {
                 />
             )}
 
-            {/* Weight editing dialog */}
             {selectedItem && isEditWeightOpen && (
                 <EditWeightDialog
                     item={selectedItem}
