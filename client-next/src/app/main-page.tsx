@@ -1,7 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import React from 'react';
 import { useState } from 'react';
 import { useItems } from '@/hooks/use-items';
@@ -12,6 +10,8 @@ import { TagContextMenu } from '@/components/tag-context-menu';
 import { TagFilter } from '@/components/tag-filter';
 import { ItemContextMenu } from '@/components/item-context-menu';
 import { EditWeightDialog } from '@/components/edit-weight-dialog';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { TravelItem } from '@/types';
 
 export default function Home() {
@@ -57,12 +57,13 @@ export default function Home() {
         if (e) {
             e.preventDefault();
             setContextMenu({ x: e.clientX, y: e.clientY, item });
-            console.log('context menu set');
         } else {
             setSelectedItem(item);
             setIsTagDialogOpen(true);
         }
     };
+
+    const handleContextMenuClose = React.useCallback(() => setContextMenu(null), []);
 
     const handleDoubleClick = (item: TravelItem) => {
         moveItem(item, true);
@@ -116,72 +117,76 @@ export default function Home() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
+                <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <AddItemDialog onAdd={addItem} isLoading={false} />
-                        {items.length > 0 && (
-                            <Button
-                                variant="outline"
-                                onClick={() => setShowClearAllDialog(true)}
-                            >
-                                Clear All Items
-                            </Button>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="font-medium">Total Weight :</span>
-                        <span>{Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
-                        <select
-                            value={weightUnit}
-                            onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
-                            className="border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                        >
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="lb">lb</option>
-                            <option value="oz">oz</option>
-                        </select>
-                    </div>
+                        <div className="flex items-center gap-2">
+                            <AddItemDialog onAdd={addItem} isLoading={false} />
+                                <Button
+                                    variant="outline"
+                                    onClick={() => setShowClearAllDialog(true)}
+                                    disabled={items.length === 0}
+                                >
+                                    Clear All Items
+                                </Button>
+                        </div>
 
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-                        <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
-                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
-                        <div className="flex-1 min-h-0 overflow-y-auto mt-2">
-                            <ItemsList
-                                items={filteredItems}
-                                onDelete={(id) => deleteItem(id, false)}
-                                onDragStart={handleDragStart}
-                                onRightClick={handleRightClick}
-                                onTagClick={handleTagClick}
-                                onDoubleClick={handleDoubleClick}
-                            />
+                        <div className="flex items-center gap-2">
+                            <span className="font-medium">Total Weight :</span>
+                            <span>{Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
+                            <select
+                                value={weightUnit}
+                                onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
+                                className="border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                            >
+                                <option value="g">g</option>
+                                <option value="kg">kg</option>
+                                <option value="lb">lb</option>
+                                <option value="oz">oz</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div
-                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${
-                            isDragOver
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border bg-card'
-                        }`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            const data = e.dataTransfer.getData('application/json');
-                            if (data) {
-                                const item = JSON.parse(data);
-                                handleDrop(item);
-                            }
-                        }}
-                    >
-                        <DropZone
-                            items={droppedItems}
-                            onRestore={handleRestoreItem}
-                            onClearAll={clearDropped}
-                            onRightClick={handleRightClick}
-                            onDoubleClick={handleDoubleClickDropped}
-                        />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
+                        <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                            <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
+                            <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
+                            <div className="flex-1 min-h-0 overflow-y-auto mt-2">
+                                <ItemsList
+                                    items={filteredItems}
+                                    onDelete={(id) => deleteItem(id, false)}
+                                    onDragStart={handleDragStart}
+                                    onRightClick={handleRightClick}
+                                    onTagClick={handleTagClick}
+                                    onDoubleClick={handleDoubleClick}
+                                />
+                            </div>
+                        </div>
+
+                        <div
+                            className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${
+                                isDragOver
+                                    ? 'border-primary bg-primary/5'
+                                    : 'border-border bg-card'
+                            }`}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                const data = e.dataTransfer.getData('application/json');
+                                if (data) {
+                                    const item = JSON.parse(data);
+                                    handleDrop(item);
+                                }
+                            }}
+                        >
+                            <DropZone
+                                items={droppedItems}
+                                onRestore={handleRestoreItem}
+                                onClearAll={clearDropped}
+                                onRightClick={handleRightClick}
+                                onDoubleClick={handleDoubleClickDropped}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -198,7 +203,7 @@ export default function Home() {
                         setSelectedItem(contextMenu.item);
                         setIsEditWeightOpen(true);
                     }}
-                    onClose={() => setContextMenu(null)}
+                    onClose={handleContextMenuClose}
                 />
             )}
 
@@ -224,8 +229,9 @@ export default function Home() {
                         setIsEditWeightOpen(false);
                         setSelectedItem(null);
                     }}
-                    onSave={async (item, newWeight) => {
-                        await updateWeight(item, newWeight);
+                    onSave={async (itemId, newWeight) => {
+                        await updateWeight(itemId, newWeight);
+                        refetchItems();
                     }}
                 />
             )}

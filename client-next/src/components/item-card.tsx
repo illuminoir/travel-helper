@@ -59,7 +59,7 @@ export function ItemCard({
                 <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-sm truncate">{item.name}</h3>
                     <p className="text-xs text-muted-foreground">
-                        {} • {item.weight}kg
+                        {} • {parseFloat(String(item.weight))}kg
                     </p>
                 </div>
             </div>

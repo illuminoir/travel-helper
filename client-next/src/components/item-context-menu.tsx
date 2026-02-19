@@ -28,8 +28,6 @@ export function ItemContextMenu({ x, y, onEditTags, onEditWeight, onClose }: Ite
         };
     }, [onClose]);
 
-    console.log('itemContextMenu', x, y);
-
     return (
         <div
             style={{ top: y, left: x }}
