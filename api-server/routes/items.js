@@ -56,7 +56,7 @@ router.put("/", async (req, res) => {
             [name, weight]
         );
 
-        res.status(201).json({ message: "Item inserted", inserted: { name, weight } });
+        res.status(201).json({ message: "Item inserted", id: result.insertId, inserted: { name, weight } });
     } catch (err) {
         if (err.code === "ER_DUP_ENTRY") {
             res.status(409).json({ error: `Item with name '${name}' already exists` });
@@ -103,6 +103,15 @@ router.delete("/:id", async (req, res) => {
         const { id } = req.params;
         await pool.query("DELETE FROM travel_items WHERE id = ?", [id]);
         res.json({ success: true, message: "Item deleted." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+router.delete("/", async (req, res) => {
+    try {
+        await pool.query("DELETE FROM travel_items");
+        res.json({ success: true, message: "Items deleted." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });

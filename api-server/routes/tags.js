@@ -26,7 +26,7 @@ router.put("/", async (req, res) => {
             [name]
         );
 
-        res.status(201).json({ message: "Tag created", inserted: { name } });
+        res.status(201).json({ message: "Tag created", id: result.insertId, name });
     } catch (err) {
         if (err.code === "ER_DUP_ENTRY") {
             res.status(409).json({ error: `Tag with name '${name}' already exists` });
@@ -42,6 +42,16 @@ router.delete("/:id", async (req, res) => {
         const { id } = req.params;
         await pool.query("DELETE FROM tags WHERE id = ?", [id]);
         res.json({ success: true, message: "Item deleted." });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
+router.delete("/", async (req, res) => {
+    try {
+        await pool.query("DELETE FROM tags");
+        res.json({ success: true, message: "Tags deleted." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });
