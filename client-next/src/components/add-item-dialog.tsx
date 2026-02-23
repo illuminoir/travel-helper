@@ -70,7 +70,7 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
                         <label className="text-sm font-medium">Weight (kg)</label>
                         <Input
                             type="number"
-                            step="0.1"
+                            step="0.000000001"
                             value={weight}
                             onChange={(e) => setWeight(e.target.value)}
                             placeholder="0"

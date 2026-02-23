@@ -8,18 +8,18 @@ interface ItemsListProps {
     items: TravelItem[];
     onDelete: (id: number) => void;
     onDragStart: (e: React.DragEvent, item: TravelItem) => void;
-    onRightClick?: (item: TravelItem) => void;
+    onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
     onDoubleClick?: (item: TravelItem) => void;
     onTagClick?: (tag: string) => void;
 }
 
 export function ItemsList({
-    items,
-    onDelete,
-    onDragStart,
-    onRightClick,
-    onTagClick,
-    onDoubleClick,
+                              items,
+                              onDelete,
+                              onDragStart,
+                              onRightClick,
+                              onTagClick,
+                              onDoubleClick,
                           }: ItemsListProps) {
     return (
         <div className="h-full overflow-y-auto pr-2 space-y-2">
@@ -43,6 +43,4 @@ export function ItemsList({
             )}
         </div>
     );
-
-
 }
