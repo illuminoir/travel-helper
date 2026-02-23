@@ -34,7 +34,8 @@ export function ItemCard({
         onRightClick?.(item, e);
     };
 
-    const handleDoubleClick = () => {
+    const handleDoubleClick = (e: React.MouseEvent) => {
+        if ((e.target as HTMLElement).closest('button')) return;
         onDoubleClick?.(item);
     };
 
@@ -49,7 +50,7 @@ export function ItemCard({
             <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => onDelete(item.id)}
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                 className="absolute top-2 right-2 text-base leading-none"
             >
                 {isDropped ? 'x' : <Trash2 className="w-4 h-4" />}
@@ -69,7 +70,7 @@ export function ItemCard({
                         return (
                             <button
                                 key={`${item.id}-tag-${index}`}
-                                onClick={() => onTagClick?.(tag.name)}
+                                onClick={(e) => { e.stopPropagation(); onTagClick?.(tag.name); }}
                                 className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
                             >
                                 {tag.name}
