@@ -146,47 +146,49 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
-                        <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-                            <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
-                            <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
-                            <div className="flex-1 min-h-0 overflow-y-auto mt-2">
-                                <ItemsList
-                                    items={filteredItems}
-                                    onDelete={(id) => deleteItem(id, false)}
-                                    onDragStart={handleDragStart}
-                                    onRightClick={handleRightClick}
-                                    onTagClick={handleTagClick}
-                                    onDoubleClick={handleDoubleClick}
-                                />
-                            </div>
-                        </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
+                    <AddItemDialog onAdd={addItem} isLoading={false} />
+                    <div>Total Weight : {droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0)}</div>
 
-                        <div
-                            className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${
-                                isDragOver
-                                    ? 'border-primary bg-primary/5'
-                                    : 'border-border bg-card'
-                            }`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                const data = e.dataTransfer.getData('application/json');
-                                if (data) {
-                                    const item = JSON.parse(data);
-                                    handleDrop(item);
-                                }
-                            }}
-                        >
-                            <DropZone
-                                items={droppedItems}
-                                onRestore={handleRestoreItem}
-                                onClearAll={clearDropped}
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                        <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items</h2>
+                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
+                        <div className="flex-1 min-h-0 overflow-y-auto mt-2">
+                            <ItemsList
+                                items={filteredItems}
+                                onDelete={(id) => deleteItem(id, false)}
+                                onDragStart={handleDragStart}
                                 onRightClick={handleRightClick}
-                                onDoubleClick={handleDoubleClickDropped}
+                                onTagClick={handleTagClick}
+                                onDoubleClick={handleDoubleClick}
                             />
                         </div>
+                    </div>
+
+                    <div
+                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${
+                            isDragOver
+                                ? 'border-primary bg-primary/5'
+                                : 'border-border bg-card'
+                        }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            const data = e.dataTransfer.getData('application/json');
+                            if (data) {
+                                const item = JSON.parse(data);
+                                handleDrop(item);
+                            }
+                        }}
+                    >
+                        <DropZone
+                            items={droppedItems}
+                            onRestore={handleRestoreItem}
+                            onClearAll={clearDropped}
+                            onRightClick={handleRightClick}
+                            onDoubleClick={handleDoubleClickDropped}
+                        />
                     </div>
                 </div>
             </div>

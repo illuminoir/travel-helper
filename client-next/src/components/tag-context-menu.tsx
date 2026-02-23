@@ -53,7 +53,7 @@ export function TagContextMenu({
             .map(tag => tag.id);
 
         await updateTags(item.id, tagsToCreate, tagsToDelete);
-        refetchItems();
+        await refetchItems();
         onClose();
     };
 

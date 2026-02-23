@@ -21,28 +21,26 @@ export function ItemsList({
                               onTagClick,
                               onDoubleClick,
                           }: ItemsListProps) {
-    if (items.length === 0) {
-        return (
-            <div className="text-center py-12 text-muted-foreground">
-                No items available
-            </div>
-        );
-    }
-
     return (
-        <div className="overflow-y-auto pr-2 space-y-2">
-            {items.map((item) => (
-                <ItemCard
-                    key={item.id}
-                    item={item}
-                    onDelete={onDelete}
-                    onDragStart={(e) => onDragStart(e, item)}
-                    onRightClick={onRightClick}
-                    onTagClick={onTagClick}
-                    draggable
-                    onDoubleClick={onDoubleClick}
-                />
-            ))}
+        <div className="h-full overflow-y-auto pr-2 space-y-2">
+            {items.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                    No items available
+                </div>
+            ) : (
+                items.map((item) => (
+                    <ItemCard
+                        key={item.id}
+                        item={item}
+                        onDelete={onDelete}
+                        onDragStart={(e) => onDragStart(e, item)}
+                        onRightClick={onRightClick}
+                        onTagClick={onTagClick}
+                        draggable
+                        onDoubleClick={onDoubleClick}
+                    />
+                ))
+            )}
         </div>
     );
 }
