@@ -225,8 +225,7 @@ export default function Home() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="font-medium">Total Weight:</span>
-                        <span>{Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
+                        <span className="font-medium text-xl">Total Weight: {Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
                         <select
                             value={weightUnit}
                             onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
