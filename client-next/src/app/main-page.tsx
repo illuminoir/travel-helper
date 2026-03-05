@@ -213,7 +213,7 @@ export default function Home() {
                             onClick={() => setShowClearAllDialog(true)}
                             disabled={items.length === 0}
                         >
-                            Clear All Items
+                            Delete All Items
                         </Button>
                     </div>
 
@@ -343,7 +343,7 @@ export default function Home() {
             <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Clear All Items?</DialogTitle>
+                        <DialogTitle>Delete All Items?</DialogTitle>
                         <DialogDescription>
                             This will permanently delete all {items.length} items. This action cannot be undone.
                         </DialogDescription>
