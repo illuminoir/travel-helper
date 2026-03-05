@@ -24,7 +24,7 @@ export function DropZone({
     return (
         <div className="flex flex-col gap-4 flex-1 min-h-0">
             <div className="flex items-center justify-between flex-shrink-0">
-                <h3 className="font-semibold text-sm">
+                <h3 className="font-semibold text-lg">
                     Dropped Items ({items.length})
                 </h3>
                 {items.length > 0 && (
