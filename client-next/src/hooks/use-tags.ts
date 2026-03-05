@@ -44,7 +44,6 @@ export function useTags() {
 
     const createTag = async (tagName: string) => {
         await tagsApi.create(tagName);
-        // Refetch all tags since the API doesn't return the new tag with its ID
         await fetchTags();
     };
 

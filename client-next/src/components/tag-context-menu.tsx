@@ -13,7 +13,7 @@ import * as React from 'react';
 import { useState } from 'react';
 
 interface TagContextMenuProps {
-    item: TravelItem;
+    selectedItem: TravelItem;
     items: TravelItem[];
     isOpen: boolean;
     onClose: () => void;
@@ -22,14 +22,14 @@ interface TagContextMenuProps {
 }
 
 export function TagContextMenu({
-                                   item,
+                                   selectedItem,
                                    items,
                                    isOpen,
                                    onClose,
                                    refetchItems,
                                }: TagContextMenuProps) {
     const { tags, updateTags, createTag, deleteTag, loading } = useTags();
-    const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(tag => tag.name));
+    const [selectedTags, setSelectedTags] = useState<string[]>(selectedItem.tags.map(tag => tag.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
     const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
 
@@ -42,7 +42,7 @@ export function TagContextMenu({
     };
 
     const handleSave = async () => {
-        const itemTags = item.tags;
+        const itemTags = selectedItem.tags;
         const itemTagNames = itemTags.map(tag => tag.name);
 
         const tagsToCreate = tags.filter(tag => selectedTags
@@ -52,13 +52,14 @@ export function TagContextMenu({
         const tagsToDelete = itemTags.filter(tag => !selectedTags.includes(tag.name))
             .map(tag => tag.id);
 
-        await updateTags(item.id, tagsToCreate, tagsToDelete);
+        await updateTags(selectedItem.id, tagsToCreate, tagsToDelete);
         await refetchItems();
         onClose();
     };
 
     const handleCreateTag = async (tagName: string) => {
         await createTag(tagName);
+        handleTagToggle(tagName);
         setIsCreateTagDialogOpen(false);
     };
 
@@ -90,7 +91,7 @@ export function TagContextMenu({
                 <DialogContent className="max-w-md">
                     <DialogHeader>
                         <DialogTitle>Tag Item</DialogTitle>
-                        <DialogDescription>Add tags to: {String(item.name || 'Item')}</DialogDescription>
+                        <DialogDescription>Add tags to: {String(selectedItem.name || 'Item')}</DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                         <Button onClick={() => setIsCreateTagDialogOpen(true)} variant="outline" className="w-full">
