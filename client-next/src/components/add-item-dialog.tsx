@@ -35,7 +35,14 @@ export function AddItemDialog({ onAdd, isLoading }: AddItemDialogProps) {
         }
 
         try {
-            await onAdd(name, weightNum);
+            await onAdd(
+                name.trim().replace(/\b\S+/g, word =>
+                    word[1] === word[1]?.toUpperCase() && word[1] !== word[1]?.toLowerCase()
+                        ? word
+                        : word.charAt(0).toUpperCase() + word.slice(1)
+                ),
+                weightNum
+            );
             setName('');
             setWeight('');
             setOpen(false);
