@@ -242,7 +242,17 @@ export default function Home() {
                 {/* Main panels */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
                     <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-                        <h2 className="font-semibold text-lg flex-shrink-0 mb-3">Available Items ({items.length})</h2>
+                        <div className="flex items-center justify-between flex-shrink-0 mb-3">
+                            <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => items.forEach(item => moveItem(item, true))}
+                                disabled={items.length === 0}
+                            >
+                                Drop All
+                            </Button>
+                        </div>
                         <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
                         <div className="flex-1 min-h-0 overflow-y-auto mt-2">
                             <ItemsList
