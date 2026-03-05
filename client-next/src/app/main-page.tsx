@@ -210,6 +210,13 @@ export default function Home() {
                         <AddItemDialog onAdd={addItem} isLoading={false} />
                         <Button
                             variant="outline"
+                            onClick={() => setSelectedTags([])}
+                            disabled={selectedTags.length === 0}
+                        >
+                            Clear Selected Tags
+                        </Button>
+                        <Button
+                            variant="outline"
                             onClick={() => setShowClearAllDialog(true)}
                             disabled={items.length === 0}
                         >
