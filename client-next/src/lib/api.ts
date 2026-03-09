@@ -16,13 +16,23 @@ async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
     return response.json();
 }
 
+export const presetsApi = {
+    getAll: () => apiCall<{ id: number; name: string; created_at: string }[]>('/presets'),
+    create: (name: string) =>
+        apiCall<{ id: number; name: string }>('/presets', {
+            method: 'PUT',
+            body: JSON.stringify({ name }),
+        }),
+    delete: (id: number) => apiCall<void>(`/presets/${id}`, { method: 'DELETE' }),
+};
+
 export const itemsApi = {
-    getAll: () => apiCall<TravelItem[]>('/items'),
+    getAll: (presetId: number) => apiCall<TravelItem[]>(`/items?preset_id=${presetId}`),
     delete: (id: number) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
-    add: (name: string, weight: number) =>
+    add: (name: string, weight: number, presetId: number) =>
         apiCall<TravelItem>('/items', {
             method: 'PUT',
-            body: JSON.stringify({ name, weight }),
+            body: JSON.stringify({ name, weight, preset_id: presetId }),
         }),
     updateWeight: (id: number, weight: number) =>
         apiCall<TravelItem>(`/items/${id}`, {
@@ -39,7 +49,8 @@ export const itemsApi = {
             method: 'PUT',
             body: JSON.stringify({ quantity }),
         }),
-    deleteAll: () => apiCall<void>('/items', { method: 'DELETE' }),
+    deleteAll: (presetId: number) =>
+        apiCall<void>(`/items?preset_id=${presetId}`, { method: 'DELETE' }),
 };
 
 export const tagsApi = {
@@ -187,21 +198,18 @@ function parseCSVLine(line: string): string[] {
     return result;
 }
 
-export async function importFromCSV(data: ImportData): Promise<void> {
-    // 1. Cleanse: delete all items first (removes tag mappings), then all tags
-    await itemsApi.deleteAll();
+export async function importFromCSV(data: ImportData, presetId: number): Promise<void> {
+    await itemsApi.deleteAll(presetId);
     await tagsApi.deleteAll();
 
-    // 2. Re-create tags, map old IDs -> new IDs
     const tagIdMap = new Map<number, number>();
     for (const tag of data.tags) {
         const created = await tagsApi.create(tag.name);
         tagIdMap.set(tag.id, created.id);
     }
 
-    // 3. Re-create items with their tag mappings
     for (const item of data.items) {
-        const created = await itemsApi.add(item.name, item.weight);
+        const created = await itemsApi.add(item.name, item.weight, presetId);
         for (const oldTagId of item.tagIds) {
             const newTagId = tagIdMap.get(oldTagId);
             if (newTagId !== undefined) {

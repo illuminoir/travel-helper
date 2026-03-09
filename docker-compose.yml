@@ -1,21 +1,6 @@
 version: "3"
 
 services:
-  api-server:
-    container_name: "api-server"
-    restart: always
-    build: ./api-server/.
-    environment:
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_DATABASE=${DB_DATABASE}
-      - DATABASE_URL=${DATABASE_URL}
-    ports:
-      - 5001:5001
-    networks:
-      - mynetwork
   db:
     container_name: "database"
     build: ./db/
@@ -26,12 +11,25 @@ services:
       MYSQL_ROOT_HOST: "%"
       MYSQL_USER: "${DB_USER}"
       MYSQL_PASSWORD: "${DB_PASSWORD}"
-
     ports:
       - "3306:3306"
-    command: --init-file /data/application/init_db.sql
     volumes:
-      - ./db/init_db.sql:/data/application/init_db.sql
+      - ./db/init_db.sql:/docker-entrypoint-initdb.d/01_init.sql
+    networks:
+      - mynetwork
+
+  api-server:
+    container_name: "api-server"
+    restart: always
+    build: ./api-server/.
+    environment:
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
+    ports:
+      - 5001:5001
     networks:
       - mynetwork
   client-next:

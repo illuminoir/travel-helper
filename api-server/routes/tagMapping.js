@@ -12,7 +12,7 @@ router.put("/", async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            "INSERT INTO tag_mapping (itemId, tagId) VALUES (?, ?)",
+            "INSERT INTO tag_mapping (item_id, tag_id) VALUES (?, ?)",
             [itemId, tagId]
         );
         res.status(201).json({ message: `Mapping for itemId ${itemId} and tagId ${tagId} created'` });
@@ -31,7 +31,7 @@ router.put("/", async (req, res) => {
 router.delete("/", async (req, res) => {
     try {
         const { itemId, tagId } = req.body;
-        await pool.query("DELETE FROM tag_mapping WHERE itemId = ? AND tagId = ?", [itemId, tagId]);
+        await pool.query("DELETE FROM tag_mapping WHERE item_id = ? AND tag_id = ?", [itemId, tagId]);
         res.json({ success: true, message: "Mapping deleted." });
     } catch (err) {
         console.error(err);
@@ -44,7 +44,7 @@ router.delete("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        await pool.query("DELETE FROM tag_mapping WHERE itemId = ?", [id]);
+        await pool.query("DELETE FROM tag_mapping WHERE item_id = ?", [id]);
         res.json({ success: true, message: "Mappings for item deleted." });
     } catch (err) {
         console.error(err);

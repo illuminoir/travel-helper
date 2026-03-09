@@ -3,6 +3,7 @@ import cors from "cors";
 import itemsRouter from "./routes/items.js";
 import tagsRouter from "./routes/tags.js";
 import tagMappingRouter from "./routes/tagMapping.js";
+import presetsRouter from "./routes/presets.js";
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(express.json()); // parse JSON
 app.use("/api/items", itemsRouter);
 app.use("/api/tags", tagsRouter);
 app.use("/api/tagMapping", tagMappingRouter);
+app.use("/api/presets", presetsRouter);
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {

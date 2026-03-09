@@ -4,38 +4,44 @@ import pool from "../db.js";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
+    const { preset_id } = req.query;
+    if (!preset_id) return res.status(400).json({ error: "Missing preset_id" });
+
     try {
-        const [items] = await pool.query("SELECT * FROM travel_items");
+        const [rows] = await pool.query(`
+            SELECT 
+                ti.*,
+                t.id as tag_id,
+                t.name as tag_name
+            FROM travel_items ti
+            LEFT JOIN tag_mapping tm ON ti.id = tm.item_id
+            LEFT JOIN tags t ON tm.tag_id = t.id
+            WHERE ti.preset_id = ?
+            ORDER BY ti.name ASC
+        `, [preset_id]);
 
-        // Enrich each item with its tags
-        const enrichedItems = await Promise.all(
-            items.map(async (item) => {
-                // Get tag IDs from tag_mapping
-                const [tagLinks] = await pool.query(
-                    "SELECT tagId FROM tag_mapping WHERE itemId = ?",
-                    [item.id]
-                );
+        // Group tags onto each item
+        const itemMap = new Map();
+        for (const row of rows) {
+            if (!itemMap.has(row.id)) {
+                itemMap.set(row.id, {
+                    id: row.id,
+                    name: row.name,
+                    weight: row.weight,
+                    dropped: row.dropped,
+                    quantity: row.quantity,
+                    presetId: row.presetId,
+                    created_at: row.created_at,
+                    updated_at: row.updated_at,
+                    tags: [],
+                });
+            }
+            if (row.tag_id) {
+                itemMap.get(row.id).tags.push({ id: row.tag_id, name: row.tag_name });
+            }
+        }
 
-                const tagIds = tagLinks.map(link => link.tagId);
-
-                let tags = [];
-                if (tagIds.length > 0) {
-                    const [tagRows] = await pool.query(
-                        `SELECT * FROM tags WHERE id IN (${tagIds.map(() => '?').join(',')})`,
-                        tagIds
-                    );
-                    tags = tagRows.sort((a, b) => a.name.localeCompare(b.name));
-
-                }
-
-                return {
-                    ...item,
-                    tags,
-                };
-            })
-        );
-
-        res.json(enrichedItems);
+        res.json([...itemMap.values()]);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });
@@ -44,24 +50,22 @@ router.get("/", async (req, res) => {
 
 
 router.put("/", async (req, res) => {
-    const { name, weight } = req.body;
+    const { name, weight, preset_id } = req.body;
 
-    if (!name || typeof weight !== "number") {
-        return res.status(400).json({ error: "Missing or invalid 'name' or 'weight'" });
+    if (!name || typeof weight !== "number" || !preset_id) {
+        return res.status(400).json({ error: "Missing or invalid 'name', 'weight', or 'preset_id'" });
     }
 
     try {
         const [result] = await pool.query(
-            "INSERT INTO travel_items (name, weight) VALUES (?, ?)",
-            [name, weight]
+            "INSERT INTO travel_items (name, weight, preset_id) VALUES (?, ?, ?)",
+            [name, weight, preset_id]
         );
-
-        res.status(201).json({ message: "Item inserted", id: result.insertId, inserted: { name, weight } });
+        res.status(201).json({ message: "Item inserted", id: result.insertId, inserted: { name, weight, preset_id } });
     } catch (err) {
         if (err.code === "ER_DUP_ENTRY") {
             res.status(409).json({ error: `Item with name '${name}' already exists` });
         } else {
-            console.log(err);
             res.status(500).json({ error: "Database error" });
         }
     }
