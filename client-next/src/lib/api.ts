@@ -2,20 +2,15 @@ import { Tag, TravelItem } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
-async function apiCall<T>(
-    endpoint: string,
-    options?: RequestInit
-): Promise<T> {
+async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...options?.headers,
-        },
+        headers: { 'Content-Type': 'application/json', ...options?.headers },
         ...options,
     });
 
     if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error ?? `API error: ${response.statusText}`);
     }
 
     return response.json();
@@ -107,30 +102,55 @@ export type ImportData = {
 };
 
 export function parseCSV(csvText: string): ImportData {
-    const lines = csvText.split('\n').map(l => l.trim()).filter(Boolean);
+    const lines = csvText.split('\n').map(l => l.trim()).filter(line => {
+        const cols = line.split(',').map(c => c.trim());
+        return cols.some(c => c !== ''); // skip fully empty rows
+    });
 
-    let section: 'tags' | 'items' | null = null;
+    const tagNameToId = new Map<string, number>();
     const tags: ImportData['tags'] = [];
     const items: ImportData['items'] = [];
 
+    let nextTagId = 1;
+    let nextItemId = 1;
+
+    const getOrCreateTag = (name: string): number => {
+        const normalized = name.trim();
+        if (!normalized) return -1;
+        if (tagNameToId.has(normalized)) return tagNameToId.get(normalized)!;
+        const id = nextTagId++;
+        tagNameToId.set(normalized, id);
+        tags.push({ id, name: normalized });
+        return id;
+    };
+
     for (const line of lines) {
-        if (line === '## TAGS') { section = 'tags'; continue; }
-        if (line === '## ITEMS') { section = 'items'; continue; }
-        if (line.startsWith('id,')) continue;
-
         const cols = parseCSVLine(line);
+        const primaryTag = cols[0]?.trim();
+        const itemName = cols[1]?.trim();
+        const secondaryTag = cols[5]?.trim();
 
-        if (section === 'tags' && cols.length >= 2) {
-            tags.push({ id: Number(cols[0]), name: cols[1] });
-        } else if (section === 'items' && cols.length >= 4) {
-            const tagIds = cols[3] ? cols[3].split(';').map(Number).filter(n => !isNaN(n) && n > 0) : [];
-            items.push({
-                id: Number(cols[0]),
-                name: cols[1],
-                weight: Number(cols[2]),
-                tagIds,
-            });
+        if (!itemName) continue; // skip rows with no item name
+
+        const tagIds: number[] = [];
+
+        if (primaryTag) {
+            const id = getOrCreateTag(primaryTag);
+            if (id !== -1) tagIds.push(id);
         }
+        if (secondaryTag) {
+            const id = getOrCreateTag(secondaryTag);
+            if (id !== -1) tagIds.push(id);
+        }
+
+        const quantity = Number(cols[2]?.trim()) || 1;
+
+        items.push({
+            id: nextItemId++,
+            name: itemName,
+            weight: 0, // not in this CSV format
+            tagIds,
+        });
     }
 
     return { tags, items };

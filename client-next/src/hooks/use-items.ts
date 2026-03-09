@@ -108,6 +108,7 @@ export function useItems() {
         droppedItems,
         loading,
         error,
+        setError,
         deleteItem,
         addItem,
         moveItem,

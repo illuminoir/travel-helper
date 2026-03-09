@@ -29,6 +29,7 @@ export function TagContextMenu({
                                    refetchItems,
                                }: TagContextMenuProps) {
     const { tags, updateTags, createTag, deleteTag, loading } = useTags();
+    const [savedTags, setSavedTags] = useState<string[]>(selectedItem.tags.map(tag => tag.name));
     const [selectedTags, setSelectedTags] = useState<string[]>(selectedItem.tags.map(tag => tag.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
     const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
@@ -41,19 +42,23 @@ export function TagContextMenu({
         );
     };
 
-    const handleSave = async () => {
-        const itemTags = selectedItem.tags;
-        const itemTagNames = itemTags.map(tag => tag.name);
-
+    const handleSaveOnly = async () => {
         const tagsToCreate = tags.filter(tag => selectedTags
-            .filter(tagName => !itemTagNames.includes(tagName))
+            .filter(tagName => !savedTags.includes(tagName))
             .includes(tag.name))
             .map(tag => tag.id);
-        const tagsToDelete = itemTags.filter(tag => !selectedTags.includes(tag.name))
+        const tagsToDelete = tags.filter(tag => savedTags
+            .filter(tagName => !selectedTags.includes(tagName))
+            .includes(tag.name))
             .map(tag => tag.id);
 
         await updateTags(selectedItem.id, tagsToCreate, tagsToDelete);
         await refetchItems();
+        setSavedTags([...selectedTags]); // sync saved state
+    };
+
+    const handleSaveAndExit = async () => {
+        await handleSaveOnly();
         onClose();
     };
 
@@ -146,8 +151,11 @@ export function TagContextMenu({
                             <Button variant="outline" onClick={onClose} disabled={loading}>
                                 Cancel
                             </Button>
-                            <Button onClick={handleSave} disabled={loading}>
-                                {loading ? 'Saving...' : 'Save Tags'}
+                            <Button variant="outline" onClick={handleSaveOnly} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button onClick={handleSaveAndExit} disabled={loading}>
+                                {loading ? 'Saving...' : 'Save & Exit'}
                             </Button>
                         </div>
                     </div>

@@ -16,7 +16,7 @@ import { TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
 
 export default function Home() {
-    const { items, droppedItems, loading, error, deleteItem, addItem, moveItem, clearDropped, refetchItems, updateWeight } = useItems();
+    const { items, droppedItems, loading, error, setError, deleteItem, addItem, moveItem, clearDropped, refetchItems, updateWeight } = useItems();
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -194,13 +194,27 @@ export default function Home() {
 
                 {/* Error banners */}
                 {error && (
-                    <div className="p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-                        {error}
+                    <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
+                        <span>{error}</span>
+                        <button
+                            onClick={() => setError(null)}
+                            className="ml-4 hover:opacity-70 transition-opacity cursor-pointer"
+                            aria-label="Dismiss"
+                        >
+                            ✕
+                        </button>
                     </div>
                 )}
                 {importError && (
-                    <div className="p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-                        Import error: {importError}
+                    <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
+                        <span>Import error: {importError}</span>
+                        <button
+                            onClick={() => setImportError(null)}
+                            className="ml-4 hover:opacity-70 transition-opacity cursor-pointer"
+                            aria-label="Dismiss"
+                        >
+                            ✕
+                        </button>
                     </div>
                 )}
 
