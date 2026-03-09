@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS travel_items (
     -- UNIQUE on name is paired with checks in the front-end to make sure names are unique --
     name VARCHAR(255) UNIQUE,
     weight DECIMAL(20, 3),
+    dropped BOOLEAN DEFAULT FALSE,
+    quantity INT DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

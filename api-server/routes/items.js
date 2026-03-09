@@ -69,27 +69,30 @@ router.put("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
     const { id } = req.params;
-    const { weight } = req.body;
+    const { weight, dropped, quantity } = req.body;
 
-    if (!id || typeof weight !== "number") {
-        return res.status(400).json({ error: "Missing or invalid 'id' or 'weight'" });
+    const fields = [];
+    const values = [];
+
+    if (typeof weight === "number")  { fields.push("weight = ?");   values.push(weight); }
+    if (typeof dropped === "boolean"){ fields.push("dropped = ?");  values.push(dropped); }
+    if (typeof quantity === "number"){ fields.push("quantity = ?"); values.push(quantity); }
+
+    if (fields.length === 0) {
+        return res.status(400).json({ error: "No valid fields to update" });
     }
+
+    values.push(id);
 
     try {
         const [result] = await pool.query(
-            "UPDATE travel_items SET weight = ? WHERE id = ?",
-            [weight, id]
+            `UPDATE travel_items SET ${fields.join(", ")} WHERE id = ?`,
+            values
         );
-
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: `Item with id '${id}' not found` });
         }
-
-        res.status(200).json({
-            message: "Item updated",
-            updated: { id, weight }
-        });
-
+        res.status(200).json({ message: "Item updated", updated: { id, ...req.body } });
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: "Database error" });

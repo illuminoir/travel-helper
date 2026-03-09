@@ -7,5 +7,7 @@ export type TravelItem = {
     id: number
     name: string
     weight: number
+    quantity: number
+    dropped: boolean
     tags: Tag[]
 }

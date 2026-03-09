@@ -22,14 +22,8 @@ export function useItems() {
     const fetchItems = useCallback(async () => {
         try {
             const apiItems = await itemsApi.getAll();
-
-            const droppedIds = new Set(droppedItemsRef.current.map((item: TravelItem) => item.id));
-
-            const freshDroppedItems = apiItems.filter((item) => droppedIds.has(item.id));
-            const availableItems = apiItems.filter((item) => !droppedIds.has(item.id));
-
-            setItems(sortItemsByName(availableItems));
-            setDroppedItems(sortItemsByName(freshDroppedItems)); // Update dropped items with fresh data!
+            setItems(sortItemsByName(apiItems.filter(item => !item.dropped)));
+            setDroppedItems(sortItemsByName(apiItems.filter(item => item.dropped)));
             setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load items');
@@ -72,20 +66,17 @@ export function useItems() {
         [droppedItems],
     );
 
-    const moveItem = useCallback((item: TravelItem, toDropped: boolean) => {
+    const moveItem = useCallback(async (item: TravelItem, toDropped: boolean) => {
+        // Optimistic update
         if (toDropped) {
-            setItems((prev) => prev.filter((i) => i.id !== item.id));
-            setDroppedItems((prev) => {
-                const alreadyExists = prev.some((i) => i.id === item.id);
-                return alreadyExists ? prev : [...prev, item].sort((a, b) => a.id - b.id);
-            });
+            setItems(prev => prev.filter(i => i.id !== item.id));
+            setDroppedItems(prev => prev.some(i => i.id === item.id) ? prev : [...prev, item]);
         } else {
-            setDroppedItems((prev) => prev.filter((i) => i.id !== item.id));
-            setItems((prev) => {
-                const alreadyExists = prev.some((i) => i.id === item.id);
-                return alreadyExists ? prev : [...prev, item].sort((a, b) => a.id - b.id);
-            });
+            setDroppedItems(prev => prev.filter(i => i.id !== item.id));
+            setItems(prev => prev.some(i => i.id === item.id) ? prev : [...prev, item]);
         }
+        // Persist
+        await itemsApi.updateDropped(item.id, toDropped);
     }, []);
 
     const updateWeight = useCallback(async (item: TravelItem, newWeight: number) => {
@@ -98,10 +89,11 @@ export function useItems() {
         }
     }, []);
 
-    const clearDropped = useCallback(() => {
+    const clearDropped = useCallback(async () => {
+        await Promise.all(droppedItems.map(item => itemsApi.updateDropped(item.id, false)));
         setDroppedItems([]);
         fetchItems();
-    }, [fetchItems]);
+    }, [droppedItems, fetchItems]);
 
     return {
         items,

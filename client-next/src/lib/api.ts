@@ -29,6 +29,16 @@ export const itemsApi = {
             method: 'PUT',
             body: JSON.stringify({ weight }),
         }),
+    updateDropped: (id: number, dropped: boolean) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ dropped }),
+        }),
+    updateQuantity: (id: number, quantity: number) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ quantity }),
+        }),
     deleteAll: () => apiCall<void>('/items', { method: 'DELETE' }),
 };
 
