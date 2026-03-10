@@ -164,7 +164,7 @@ export function parseCSV(csvText: string): ImportData {
             if (id !== -1) tagIds.push(id);
         }
 
-        const quantity = Number(cols[2]?.trim()) || 1;
+        //const quantity = Number(cols[2]?.trim()) || 1;
 
         items.push({
             id: nextItemId++,
