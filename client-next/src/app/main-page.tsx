@@ -7,10 +7,8 @@ import { usePresets } from '@/hooks/use-presets';
 import { AddItemDialog } from '@/components/add-item-dialog';
 import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
-import { TagContextMenu } from '@/components/tag-context-menu';
+import { EditItemDialog } from '@/components/edit-item-dialog';
 import { TagFilter } from '@/components/tag-filter';
-import { ItemContextMenu } from '@/components/item-context-menu';
-import { EditWeightDialog } from '@/components/edit-weight-dialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -31,8 +29,7 @@ export default function Home() {
 
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
-    const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
-    const [isEditWeightOpen, setIsEditWeightOpen] = useState(false);
+    const [isEditItemOpen, setIsEditItemOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('kg');
     const [showClearAllDialog, setShowClearAllDialog] = useState(false);
@@ -44,8 +41,6 @@ export default function Home() {
     const [showDeletePresetDialog, setShowDeletePresetDialog] = useState(false);
     const [presetError, setPresetError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: TravelItem } | null>(null);
 
     const activePreset = presets.find(p => p.id === activePresetId);
 
@@ -73,16 +68,11 @@ export default function Home() {
     };
 
     const handleRightClick = (item: TravelItem, e?: React.MouseEvent) => {
-        if (e) {
-            e.preventDefault();
-            setContextMenu({ x: e.clientX, y: e.clientY, item });
-        } else {
-            setSelectedItem(item);
-            setIsTagDialogOpen(true);
-        }
+        if (e) e.preventDefault();
+        setSelectedItem(item);
+        setIsEditItemOpen(true);
     };
 
-    const handleContextMenuClose = React.useCallback(() => setContextMenu(null), []);
     const handleDoubleClick = (item: TravelItem) => moveItem(item, true);
     const handleDoubleClickDropped = (item: TravelItem) => moveItem(item, false);
 
@@ -170,8 +160,6 @@ export default function Home() {
                         <p className="text-muted-foreground text-sm">
                             Drag items to organize them • Double-click to move • Right-click to edit • Click tags to filter
                         </p>
-
-                        {/* Preset dropdown */}
                         <div className="flex items-center gap-2 mt-1">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -196,7 +184,6 @@ export default function Home() {
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-
                             <Button
                                 variant="outline"
                                 size="icon"
@@ -265,7 +252,7 @@ export default function Home() {
                 {/* Toolbar row */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <AddItemDialog onAdd={addItem} isLoading={false} />
+                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Selected Tags
                         </Button>
@@ -331,34 +318,15 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Context menus & dialogs */}
-            {contextMenu && (
-                <ItemContextMenu
-                    x={contextMenu.x}
-                    y={contextMenu.y}
-                    onEditTags={() => { setSelectedItem(contextMenu.item); setIsTagDialogOpen(true); }}
-                    onEditWeight={() => { setSelectedItem(contextMenu.item); setIsEditWeightOpen(true); }}
-                    onClose={handleContextMenuClose}
-                />
-            )}
-
+            {/* Edit Item Dialog */}
             {selectedItem && (
-                <TagContextMenu
-                    selectedItem={selectedItem}
-                    items={items}
-                    isOpen={isTagDialogOpen}
-                    onClose={() => { setIsTagDialogOpen(false); setSelectedItem(null); }}
-                    onTagCreated={() => {}}
-                    refetchItems={refetchItems}
-                />
-            )}
-
-            {selectedItem && isEditWeightOpen && (
-                <EditWeightDialog
+                <EditItemDialog
                     item={selectedItem}
-                    isOpen={isEditWeightOpen}
-                    onClose={() => { setIsEditWeightOpen(false); setSelectedItem(null); }}
-                    onSave={async (itemId, newWeight) => { await updateWeight(itemId, newWeight); refetchItems(); }}
+                    items={[...items, ...droppedItems]}
+                    isOpen={isEditItemOpen}
+                    onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); }}
+                    onSaveWeight={async (item, newWeight) => { await updateWeight(item, newWeight); }}
+                    refetchItems={refetchItems}
                 />
             )}
 
@@ -373,7 +341,6 @@ export default function Home() {
                 </div>
             )}
 
-            {/* New Preset dialog */}
             <Dialog open={showNewPresetDialog} onOpenChange={setShowNewPresetDialog}>
                 <DialogContent>
                     <DialogHeader>
@@ -394,7 +361,6 @@ export default function Home() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete Preset dialog */}
             <Dialog open={showDeletePresetDialog} onOpenChange={setShowDeletePresetDialog}>
                 <DialogContent>
                     <DialogHeader>
@@ -410,7 +376,6 @@ export default function Home() {
                 </DialogContent>
             </Dialog>
 
-            {/* Import warning */}
             <Dialog open={showImportWarning} onOpenChange={setShowImportWarning}>
                 <DialogContent>
                     <DialogHeader>
@@ -426,7 +391,6 @@ export default function Home() {
                 </DialogContent>
             </Dialog>
 
-            {/* Delete all items */}
             <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
                 <DialogContent>
                     <DialogHeader>

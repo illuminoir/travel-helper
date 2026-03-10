@@ -63,11 +63,8 @@ router.put("/", async (req, res) => {
         );
         res.status(201).json({ message: "Item inserted", id: result.insertId, inserted: { name, weight, preset_id } });
     } catch (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-            res.status(409).json({ error: `Item with name '${name}' already exists` });
-        } else {
-            res.status(500).json({ error: "Database error" });
-        }
+        console.log(err);
+        res.status(500).json({ error: "Database error" });
     }
 });
 

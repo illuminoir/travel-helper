@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS presets (
 CREATE TABLE IF NOT EXISTS travel_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     preset_id INT,
-    name VARCHAR(255) UNIQUE,
+    name VARCHAR(255),
     weight DECIMAL(20, 3),
     dropped BOOLEAN DEFAULT FALSE,
     quantity INT DEFAULT 1,
