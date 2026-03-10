@@ -1,17 +1,26 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { itemsApi, tagMappingApi } from '@/lib/api';
 import { TravelItem } from '@/types';
 
 const sortItemsByName = (items: TravelItem[]) =>
     [...items].sort((a, b) => a.name.localeCompare(b.name));
 
+type UndoAction =
+    | { type: 'DELETE_ITEM'; item: TravelItem; wasDropped: boolean }
+    | { type: 'MOVE_ITEM'; item: TravelItem; wasDropped: boolean }
+    | { type: 'CLEAR_DROPPED'; items: TravelItem[] }
+    | { type: 'DELETE_ALL'; items: TravelItem[] }
+    | { type: 'DROP_ALL'; items: TravelItem[] };
+
 export function useItems(presetId: number | null) {
     const [items, setItems] = useState<TravelItem[]>([]);
     const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [canUndo, setCanUndo] = useState(false);
+    const undoStack = useRef<UndoAction[]>([]);
 
     const fetchItems = useCallback(async () => {
         if (presetId === null) return;
@@ -23,7 +32,7 @@ export function useItems(presetId: number | null) {
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load items');
         } finally {
-            setLoading(false); // only flips once, never back to true
+            setLoading(false);
         }
     }, [presetId]);
 
@@ -31,19 +40,36 @@ export function useItems(presetId: number | null) {
         fetchItems();
     }, [fetchItems]);
 
+    // Clear undo stack when preset changes
+    useEffect(() => {
+        undoStack.current = [];
+        setCanUndo(false);
+    }, [presetId]);
+
+    const recordAction = (action: UndoAction) => {
+        undoStack.current.push(action);
+        setCanUndo(true);
+    };
+
     const deleteItem = useCallback(async (id: number, isDropped: boolean) => {
         try {
+            const allItems = isDropped ? droppedItems : items;
+            const item = allItems.find(i => i.id === id);
+
             await itemsApi.delete(id);
             await tagMappingApi.removeAllTagsOnItem(id);
+
             if (isDropped) {
-                setDroppedItems(prev => prev.filter(item => item.id !== id));
+                setDroppedItems(prev => prev.filter(i => i.id !== id));
             } else {
-                setItems(prev => prev.filter(item => item.id !== id));
+                setItems(prev => prev.filter(i => i.id !== id));
             }
+
+            if (item) recordAction({ type: 'DELETE_ITEM', item, wasDropped: isDropped });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete item');
         }
-    }, []);
+    }, [items, droppedItems]);
 
     const addItem = useCallback(async (name: string, weight: number) => {
         if (presetId === null) return;
@@ -66,6 +92,7 @@ export function useItems(presetId: number | null) {
             setItems(prev => prev.some(i => i.id === item.id) ? prev : [...prev, item]);
         }
         await itemsApi.updateDropped(item.id, toDropped);
+        recordAction({ type: 'MOVE_ITEM', item, wasDropped: !toDropped });
     }, []);
 
     const updateWeight = useCallback(async (item: TravelItem, newWeight: number) => {
@@ -79,10 +106,72 @@ export function useItems(presetId: number | null) {
     }, [fetchItems]);
 
     const clearDropped = useCallback(async () => {
+        recordAction({ type: 'CLEAR_DROPPED', items: [...droppedItems] });
         await Promise.all(droppedItems.map(item => itemsApi.updateDropped(item.id, false)));
         setDroppedItems([]);
         await fetchItems();
     }, [droppedItems, fetchItems]);
+
+    const deleteAll = useCallback(async (itemsToDelete: TravelItem[]) => {
+        recordAction({ type: 'DELETE_ALL', items: [...itemsToDelete] });
+        await Promise.all(itemsToDelete.map(item => itemsApi.delete(item.id)));
+        await fetchItems();
+    }, [fetchItems]);
+
+    const dropAll = useCallback(async (itemsToDrop: TravelItem[]) => {
+        recordAction({ type: 'DROP_ALL', items: [...itemsToDrop] });
+        await Promise.all(itemsToDrop.map(item => itemsApi.updateDropped(item.id, true)));
+        await fetchItems();
+    }, [fetchItems]);
+
+    const undo = useCallback(async () => {
+        const action = undoStack.current.pop();
+        if (!action || presetId === null) return;
+
+        setCanUndo(undoStack.current.length > 0);
+
+        try {
+            switch (action.type) {
+                case 'DELETE_ITEM': {
+                    const created = await itemsApi.add(action.item.name, parseInt(String(action.item.weight)), presetId);
+                    for (const tag of action.item.tags) {
+                        await tagMappingApi.createTagMapping(created.id, tag.id);
+                    }
+                    if (action.wasDropped) {
+                        await itemsApi.updateDropped(created.id, true);
+                    }
+                    break;
+                }
+                case 'MOVE_ITEM': {
+                    await itemsApi.updateDropped(action.item.id, action.wasDropped);
+                    break;
+                }
+                case 'CLEAR_DROPPED': {
+                    await Promise.all(action.items.map(item => itemsApi.updateDropped(item.id, true)));
+                    break;
+                }
+                case 'DELETE_ALL': {
+                    for (const item of action.items) {
+                        const created = await itemsApi.add(item.name, item.weight, presetId);
+                        for (const tag of item.tags) {
+                            await tagMappingApi.createTagMapping(created.id, tag.id);
+                        }
+                        if (item.dropped) {
+                            await itemsApi.updateDropped(created.id, true);
+                        }
+                    }
+                    break;
+                }
+                case 'DROP_ALL': {
+                    await Promise.all(action.items.map(item => itemsApi.updateDropped(item.id, false)));
+                    break;
+                }
+            }
+            await fetchItems();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to undo');
+        }
+    }, [presetId, fetchItems]);
 
     return {
         items,
@@ -90,11 +179,15 @@ export function useItems(presetId: number | null) {
         loading,
         error,
         setError,
+        canUndo,
         deleteItem,
         addItem,
         moveItem,
         updateWeight,
         clearDropped,
+        deleteAll,
+        dropAll,
+        undo,
         refetchItems: fetchItems,
     };
 }

@@ -25,7 +25,9 @@ import {
 
 export default function Home() {
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
-    const { items, droppedItems, loading, error, setError, deleteItem, addItem, moveItem, clearDropped, refetchItems, updateWeight } = useItems(activePresetId);
+    const { items, droppedItems, loading, error, setError, deleteItem, addItem,
+        moveItem, clearDropped, refetchItems, updateWeight,
+        canUndo, undo, deleteAll, dropAll } = useItems(activePresetId);
 
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
@@ -256,8 +258,21 @@ export default function Home() {
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Selected Tags
                         </Button>
-                        <Button variant="outline" onClick={() => setShowClearAllDialog(true)} disabled={items.length === 0}>
+                        <Button
+                            variant="outline"
+                            onClick={async () => {
+                                await deleteAll(items);
+                                setShowClearAllDialog(false);
+                            }}
+                            disabled={items.length === 0}>
                             Delete All Items
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={undo}
+                            disabled={!canUndo}
+                        >
+                            Undo
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
@@ -280,7 +295,11 @@ export default function Home() {
                     <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
                         <div className="flex items-center justify-between flex-shrink-0 mb-3">
                             <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
-                            <Button variant="outline" size="sm" onClick={() => items.forEach(item => moveItem(item, true))} disabled={items.length === 0}>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => dropAll(items)}
+                                disabled={items.length === 0}>
                                 Drop All
                             </Button>
                         </div>
