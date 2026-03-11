@@ -22,18 +22,19 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useWeightUnit } from '@/contexts/weight-unit-context';
+import { fromGrams } from "@/lib/weight";
 
 export default function Home() {
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
     const { items, droppedItems, loading, error, setError, deleteItem, addItem,
         moveItem, clearDropped, refetchItems, updateWeight,
-        canUndo, undo, deleteAll, dropAll } = useItems(activePresetId);
+        canUndo, undo, deleteAll, dropAll, updateQuantity } = useItems(activePresetId);
 
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isEditItemOpen, setIsEditItemOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [weightUnit, setWeightUnit] = useState<'g' | 'kg' | 'lb' | 'oz'>('kg');
     const [showClearAllDialog, setShowClearAllDialog] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
@@ -41,8 +42,9 @@ export default function Home() {
     const [showNewPresetDialog, setShowNewPresetDialog] = useState(false);
     const [newPresetName, setNewPresetName] = useState('');
     const [showDeletePresetDialog, setShowDeletePresetDialog] = useState(false);
-    const [presetError, setPresetError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [newPresetError, setNewPresetError] = useState<string | null>(null);
+    const { weightUnit, setWeightUnit } = useWeightUnit();
 
     const activePreset = presets.find(p => p.id === activePresetId);
 
@@ -124,9 +126,8 @@ export default function Home() {
             await createPreset(newPresetName.trim());
             setNewPresetName('');
             setShowNewPresetDialog(false);
-            setPresetError(null);
         } catch (err) {
-            setPresetError(err instanceof Error ? err.message : 'Failed to create preset');
+            setNewPresetError(err instanceof Error ? err.message : 'Failed to create preset');
         }
     };
 
@@ -144,12 +145,9 @@ export default function Home() {
         );
     }
 
-    const totalKg = droppedItems.reduce((sum, current) => sum + Number(current.weight), 0.0);
-    const convertedWeight =
-        weightUnit === 'kg' ? totalKg :
-            weightUnit === 'g'  ? totalKg * 1000 :
-                weightUnit === 'lb' ? totalKg * 2.20462 :
-                    totalKg * 35.274;
+    const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
+    const convertedWeight = Math.round(fromGrams(totalGrams, weightUnit) * 1000) / 1000;
+
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -244,12 +242,6 @@ export default function Home() {
                         <button onClick={() => setImportError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
                     </div>
                 )}
-                {presetError && (
-                    <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-                        <span>{presetError}</span>
-                        <button onClick={() => setPresetError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
-                    </div>
-                )}
 
                 {/* Toolbar row */}
                 <div className="flex items-center justify-between">
@@ -276,7 +268,7 @@ export default function Home() {
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-xl">Total Weight: {Math.round(convertedWeight * 1000) / 1000} {weightUnit}</span>
+                        <span className="font-medium text-xl">Total Weight: {convertedWeight} {weightUnit}</span>
                         <select
                             value={weightUnit}
                             onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
@@ -312,6 +304,7 @@ export default function Home() {
                                 onRightClick={handleRightClick}
                                 onTagClick={handleTagClick}
                                 onDoubleClick={handleDoubleClick}
+                                onQuantityChange={(item, qty) => updateQuantity(item, qty)}
                             />
                         </div>
                     </div>
@@ -332,6 +325,7 @@ export default function Home() {
                             onClearAll={clearDropped}
                             onRightClick={handleRightClick}
                             onDoubleClick={handleDoubleClickDropped}
+                            onQuantityChange={(item, qty) => updateQuantity(item, qty)}
                         />
                     </div>
                 </div>
@@ -360,7 +354,10 @@ export default function Home() {
                 </div>
             )}
 
-            <Dialog open={showNewPresetDialog} onOpenChange={setShowNewPresetDialog}>
+            <Dialog open={showNewPresetDialog} onOpenChange={(open) => {
+                setShowNewPresetDialog(open);
+                if (!open) { setNewPresetName(''); setNewPresetError(null); }
+            }}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>New Preset</DialogTitle>
@@ -369,10 +366,11 @@ export default function Home() {
                     <Input
                         placeholder="e.g. Weekend Trip"
                         value={newPresetName}
-                        onChange={(e) => setNewPresetName(e.target.value)}
+                        onChange={(e) => { setNewPresetName(e.target.value); setNewPresetError(null); }}
                         onKeyDown={(e) => e.key === 'Enter' && handleCreatePreset()}
                         autoFocus
                     />
+                    {newPresetError && <p className="text-sm text-destructive">{newPresetError}</p>}
                     <div className="flex justify-end gap-2 pt-2">
                         <Button variant="outline" onClick={() => setShowNewPresetDialog(false)}>Cancel</Button>
                         <Button onClick={handleCreatePreset} disabled={!newPresetName.trim()}>Create</Button>

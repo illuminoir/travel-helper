@@ -10,6 +10,8 @@ import { CreateTagDialog } from '@/components/create-tag-dialog';
 import { useTags } from '@/hooks/use-tags';
 import type { Tag, TravelItem } from '@/types';
 import { Check, Trash2 } from 'lucide-react';
+import { useWeightUnit } from '@/contexts/weight-unit-context';
+import { toGrams, fromGrams } from '@/lib/weight';
 
 interface EditItemDialogProps {
     item: TravelItem;
@@ -22,9 +24,12 @@ interface EditItemDialogProps {
 
 export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, refetchItems }: EditItemDialogProps) {
     const { tags, updateTags, createTag, deleteTag, loading } = useTags();
+    const { weightUnit } = useWeightUnit();
 
-    // Weight state
-    const [weight, setWeight] = useState(String(parseFloat(String(item.weight))));
+    // Weight: display in current unit, store in grams
+    const [weight, setWeight] = useState(
+        String(Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000)
+    );
     const [weightLoading, setWeightLoading] = useState(false);
     const [weightError, setWeightError] = useState('');
 
@@ -41,7 +46,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
             return;
         }
         setWeightLoading(true);
-        await onSaveWeight(item, parsed);
+        await onSaveWeight(item, toGrams(parsed, weightUnit));
         setWeightLoading(false);
         setWeightError('');
     };
@@ -68,7 +73,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
     const handleSave = async () => {
         await handleSaveWeight();
         await handleSaveTags();
-    }
+    };
 
     const handleSaveAndExit = async () => {
         await handleSave();
@@ -100,7 +105,6 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                     </DialogHeader>
 
                     <div className="space-y-5">
-                        {/* Weight */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium">Weight</p>
                             <div className="flex items-center gap-2">
@@ -110,17 +114,19 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                                     step="0.1"
                                     value={weight}
                                     onChange={(e) => { setWeight(e.target.value); setWeightError(''); }}
-                                    placeholder="Weight in kg"
+                                    onFocus={(e) => {
+                                        const target = e.target;
+                                        setTimeout(() => target.setSelectionRange(target.value.length, target.value.length), 0);
+                                    }}
                                     className="flex-1"
                                 />
-                                <span className="text-sm text-muted-foreground">kg</span>
+                                <span className="text-sm text-muted-foreground">{weightUnit}</span>
                             </div>
                             {weightError && <p className="text-sm text-destructive">{weightError}</p>}
                         </div>
 
                         <div className="border-t" />
 
-                        {/* Tags */}
                         <div className="space-y-3">
                             <p className="text-sm font-medium">Tags</p>
                             <Button onClick={() => setIsCreateTagDialogOpen(true)} variant="outline" className="w-full">
@@ -165,12 +171,12 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                             </div>
 
                             <div className="flex gap-2 justify-end pt-2">
-                                <Button variant="outline" onClick={onClose} disabled={loading}>Cancel</Button>
-                                <Button variant="outline" onClick={handleSave} disabled={loading}>
-                                    {loading ? 'Saving...' : 'Save'}
+                                <Button variant="outline" onClick={onClose} disabled={loading || weightLoading}>Cancel</Button>
+                                <Button variant="outline" onClick={handleSave} disabled={loading || weightLoading}>
+                                    {loading || weightLoading ? 'Saving...' : 'Save'}
                                 </Button>
-                                <Button onClick={handleSaveAndExit} disabled={loading}>
-                                    {loading ? 'Saving...' : 'Save & Exit'}
+                                <Button onClick={handleSaveAndExit} disabled={loading || weightLoading}>
+                                    {loading || weightLoading ? 'Saving...' : 'Save & Exit'}
                                 </Button>
                             </div>
                         </div>
@@ -178,7 +184,6 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                 </DialogContent>
             </Dialog>
 
-            {/* Delete tag confirmation */}
             <Dialog open={!!tagToDelete} onOpenChange={(open) => !open && setTagToDelete(null)}>
                 <DialogContent>
                     <DialogHeader>

@@ -14,6 +14,7 @@ interface DropZoneProps {
     onDoubleClick?: (item: TravelItem) => void;
     onClearAll: () => void;
     onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
+    onQuantityChange?: (item: TravelItem, quantity: number) => void;
 }
 
 export function DropZone({
@@ -22,6 +23,7 @@ export function DropZone({
                              onDoubleClick,
                              onClearAll,
                              onRightClick,
+                             onQuantityChange,
                          }: DropZoneProps) {
     const [search, setSearch] = useState('');
 
@@ -78,6 +80,7 @@ export function DropZone({
                             onDoubleClick={onDoubleClick}
                             draggable={false}
                             isDropped={true}
+                            onQuantityChange={onQuantityChange}
                         />
                     ))}
                 </div>

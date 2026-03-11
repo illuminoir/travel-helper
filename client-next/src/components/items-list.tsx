@@ -13,6 +13,7 @@ interface ItemsListProps {
     onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
     onDoubleClick?: (item: TravelItem) => void;
     onTagClick?: (tag: string) => void;
+    onQuantityChange?: (item: TravelItem, quantity: number) => void;
 }
 
 export function ItemsList({
@@ -22,6 +23,7 @@ export function ItemsList({
                               onRightClick,
                               onTagClick,
                               onDoubleClick,
+                              onQuantityChange,
                           }: ItemsListProps) {
     const [search, setSearch] = useState('');
 
@@ -59,6 +61,7 @@ export function ItemsList({
                             onTagClick={onTagClick}
                             draggable
                             onDoubleClick={onDoubleClick}
+                            onQuantityChange={onQuantityChange}
                         />
                     ))
                 )}

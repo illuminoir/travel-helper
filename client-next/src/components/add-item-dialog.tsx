@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
+import { useWeightUnit } from '@/contexts/weight-unit-context';
+import { toGrams } from '@/lib/weight';
 
 interface AddItemDialogProps {
     onAdd: (name: string, weight: number) => Promise<void>;
@@ -20,6 +22,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
     const [weight, setWeight] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
+    const { weightUnit } = useWeightUnit();
 
     const formatName = (raw: string) =>
         raw.trim().replace(/\b\S+/g, word =>
@@ -33,7 +36,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
 
     const doAdd = async () => {
         try {
-            await onAdd(formatName(name), parseFloat(weight));
+            await onAdd(formatName(name), toGrams(parseFloat(weight), weightUnit));
             setName('');
             setWeight('');
             setOpen(false);
@@ -91,7 +94,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium">Weight (kg)</label>
+                            <label className="text-sm font-medium">Weight ({weightUnit})</label>
                             <Input
                                 type="number"
                                 min="0"
@@ -110,7 +113,6 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                 </DialogContent>
             </Dialog>
 
-            {/* Duplicate warning dialog */}
             <Dialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
                 <DialogContent>
                     <DialogHeader>

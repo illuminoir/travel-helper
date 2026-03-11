@@ -85,11 +85,11 @@ export function useItems(presetId: number | null) {
 
     const moveItem = useCallback(async (item: TravelItem, toDropped: boolean) => {
         if (toDropped) {
-            setItems(prev => prev.filter(i => i.id !== item.id));
-            setDroppedItems(prev => prev.some(i => i.id === item.id) ? prev : [...prev, item]);
+            setItems(prev => sortItemsByName(prev.filter(i => i.id !== item.id)));
+            setDroppedItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, item]));
         } else {
-            setDroppedItems(prev => prev.filter(i => i.id !== item.id));
-            setItems(prev => prev.some(i => i.id === item.id) ? prev : [...prev, item]);
+            setDroppedItems(prev => sortItemsByName(prev.filter(i => i.id !== item.id)));
+            setItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, item]));
         }
         await itemsApi.updateDropped(item.id, toDropped);
         recordAction({ type: 'MOVE_ITEM', item, wasDropped: !toDropped });
@@ -173,6 +173,18 @@ export function useItems(presetId: number | null) {
         }
     }, [presetId, fetchItems]);
 
+    const updateQuantity = useCallback(async (item: TravelItem, newQuantity: number) => {
+        try {
+            console.log("updating");
+            await itemsApi.updateQuantity(item.id, newQuantity);
+            setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
+            setDroppedItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
+            setError(null);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Failed to update quantity');
+        }
+    }, []);
+
     return {
         items,
         droppedItems,
@@ -188,6 +200,7 @@ export function useItems(presetId: number | null) {
         deleteAll,
         dropAll,
         undo,
+        updateQuantity,
         refetchItems: fetchItems,
     };
 }
