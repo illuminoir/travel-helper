@@ -264,7 +264,7 @@ export default function Home() {
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-xl">Total Weight: {convertedWeight} {weightUnit}</span>
+                        <span className="font-medium text-xl">Total Weight: {convertedWeight}</span>
                         <select
                             value={weightUnit}
                             onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
