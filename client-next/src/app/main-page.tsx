@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
-import { Trash2, ChevronDown, Plus } from 'lucide-react';
+import { Trash2, ChevronDown, Plus, Undo2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -248,7 +248,7 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                         <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
-                            Clear Selected Tags
+                            Clear Filters
                         </Button>
                         <Button
                             variant="outline"
@@ -259,12 +259,8 @@ export default function Home() {
                             disabled={items.length === 0}>
                             Delete All Items
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={undo}
-                            disabled={!canUndo}
-                        >
-                            Undo
+                        <Button variant="outline" size="icon" onClick={undo} disabled={!canUndo}>
+                            <Undo2 className="w-4 h-4" />
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">

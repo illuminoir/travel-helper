@@ -33,21 +33,17 @@ export function ItemCard({
                              isDropped = false,
                          }: ItemCardProps) {
     const { weightUnit } = useWeightUnit();
-    const [quantity, setQuantity] = useState(item.quantity ?? 1);
-    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [quantity, setQuantity] = useState<number | string>(item.quantity ?? 1);
 
-    // Keep in sync if item changes externally
     useEffect(() => {
         setQuantity(item.quantity ?? 1);
     }, [item.quantity]);
 
-    const handleQuantityChange = (val: number) => {
-        const clamped = Math.max(1, val);
-        setQuantity(clamped);
-    };
-
     const commitQuantity = () => {
-        onQuantityChange?.(item, quantity);
+        const num = parseInt(String(quantity));
+        const final = isNaN(num) || num < 1 ? 1 : num;
+        setQuantity(final);
+        onQuantityChange?.(item, final);
     };
 
     const handleContextMenu = (e: React.MouseEvent) => {
@@ -79,9 +75,6 @@ export function ItemCard({
 
             <div className="flex-1 min-w-0">
                 <h3 className="font-semibold text-sm truncate">{item.name}</h3>
-                <p className="text-xs text-muted-foreground">
-                    • {Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000} {weightUnit}
-                </p>
             </div>
 
             {Array.isArray(item.tags) && item.tags.length > 0 && (
@@ -98,6 +91,12 @@ export function ItemCard({
                 </div>
             )}
 
+            <div className="flex-1 min-w-0">
+                <p className="text-xs text-muted-foreground">
+                    {Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000} {weightUnit}
+                </p>
+            </div>
+
             {/* Quantity — bottom right */}
             <div
                 className="absolute bottom-2 right-2 flex items-center gap-1"
@@ -109,7 +108,7 @@ export function ItemCard({
                     type="number"
                     min="1"
                     value={quantity}
-                    onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
+                    onChange={(e) => setQuantity(e.target.value)}
                     onBlur={commitQuantity}
                     onKeyDown={(e) => e.key === 'Enter' && commitQuantity()}
                     className="w-8 h-6 text-center text-xs border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"

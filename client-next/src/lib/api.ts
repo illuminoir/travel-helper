@@ -49,6 +49,11 @@ export const itemsApi = {
             method: 'PUT',
             body: JSON.stringify({ quantity }),
         }),
+    updateName: (id: number, name: string) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ name }),
+        }),
     deleteAll: (presetId: number) =>
         apiCall<void>(`/items?preset_id=${presetId}`, { method: 'DELETE' }),
 };

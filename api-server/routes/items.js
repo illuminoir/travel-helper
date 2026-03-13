@@ -78,6 +78,7 @@ router.put("/:id", async (req, res) => {
     if (typeof weight === "number")  { fields.push("weight = ?");   values.push(weight); }
     if (typeof dropped === "boolean"){ fields.push("dropped = ?");  values.push(dropped); }
     if (typeof quantity === "number"){ fields.push("quantity = ?"); values.push(quantity); }
+    if (typeof name === "string" && name.trim()) { fields.push("name = ?"); values.push(name.trim()); }
 
     if (fields.length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });

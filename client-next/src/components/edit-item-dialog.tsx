@@ -12,6 +12,7 @@ import type { Tag, TravelItem } from '@/types';
 import { Check, Trash2 } from 'lucide-react';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { toGrams, fromGrams } from '@/lib/weight';
+import { itemsApi } from '@/lib/api';
 
 interface EditItemDialogProps {
     item: TravelItem;
@@ -26,7 +27,12 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
     const { tags, updateTags, createTag, deleteTag, loading } = useTags();
     const { weightUnit } = useWeightUnit();
 
-    // Weight: display in current unit, store in grams
+    // Name state
+    const [name, setName] = useState(item.name);
+    const [nameLoading, setNameLoading] = useState(false);
+    const [nameError, setNameError] = useState('');
+
+    // Weight state
     const [weight, setWeight] = useState(
         String(Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000)
     );
@@ -38,6 +44,21 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(t => t.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
     const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+
+    const handleSaveName = async () => {
+        if (!name.trim()) { setNameError('Name cannot be empty.'); return; }
+        if (name.trim() === item.name) return; // no change
+        setNameLoading(true);
+        try {
+            await itemsApi.updateName(item.id, name.trim());
+            await refetchItems();
+            setNameError('');
+        } catch (err) {
+            setNameError(err instanceof Error ? err.message : 'Failed to rename item');
+        } finally {
+            setNameLoading(false);
+        }
+    };
 
     const handleSaveWeight = async () => {
         const parsed = parseFloat(weight);
@@ -59,18 +80,18 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
 
     const handleSaveTags = async () => {
         const tagsToCreate = tags.filter(tag =>
-            selectedTags.filter(name => !savedTags.includes(name)).includes(tag.name)
+            selectedTags.filter(n => !savedTags.includes(n)).includes(tag.name)
         ).map(tag => tag.id);
         const tagsToDelete = tags.filter(tag =>
-            savedTags.filter(name => !selectedTags.includes(name)).includes(tag.name)
+            savedTags.filter(n => !selectedTags.includes(n)).includes(tag.name)
         ).map(tag => tag.id);
-
         await updateTags(item.id, tagsToCreate, tagsToDelete);
         await refetchItems();
         setSavedTags([...selectedTags]);
     };
 
     const handleSave = async () => {
+        await handleSaveName();
         await handleSaveWeight();
         await handleSaveTags();
     };
@@ -86,8 +107,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
         setIsCreateTagDialogOpen(false);
     };
 
-    const isTagInUse = (tagId: number) =>
-        items.some(i => i.tags.some(t => t.id === tagId));
+    const isTagInUse = (tagId: number) => items.some(i => i.tags.some(t => t.id === tagId));
 
     const handleDeleteTag = async (tag: Tag) => {
         await deleteTag(tag.id);
@@ -95,6 +115,8 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
         setSavedTags(prev => prev.filter(t => t !== tag.name));
         refetchItems();
     };
+
+    const isBusy = loading || weightLoading || nameLoading;
 
     return (
         <>
@@ -105,6 +127,21 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                     </DialogHeader>
 
                     <div className="space-y-5">
+
+                        {/* Name */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium">Name</p>
+                            <Input
+                                value={name}
+                                onChange={(e) => { setName(e.target.value); setNameError(''); }}
+                                placeholder="Item name"
+                            />
+                            {nameError && <p className="text-sm text-destructive">{nameError}</p>}
+                        </div>
+
+                        <div className="border-t" />
+
+                        {/* Weight */}
                         <div className="space-y-2">
                             <p className="text-sm font-medium">Weight</p>
                             <div className="flex items-center gap-2">
@@ -127,6 +164,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
 
                         <div className="border-t" />
 
+                        {/* Tags */}
                         <div className="space-y-3">
                             <p className="text-sm font-medium">Tags</p>
                             <Button onClick={() => setIsCreateTagDialogOpen(true)} variant="outline" className="w-full">
@@ -171,12 +209,12 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                             </div>
 
                             <div className="flex gap-2 justify-end pt-2">
-                                <Button variant="outline" onClick={onClose} disabled={loading || weightLoading}>Cancel</Button>
-                                <Button variant="outline" onClick={handleSave} disabled={loading || weightLoading}>
-                                    {loading || weightLoading ? 'Saving...' : 'Save'}
+                                <Button variant="outline" onClick={onClose} disabled={isBusy}>Cancel</Button>
+                                <Button variant="outline" onClick={handleSave} disabled={isBusy}>
+                                    {isBusy ? 'Saving...' : 'Save'}
                                 </Button>
-                                <Button onClick={handleSaveAndExit} disabled={loading || weightLoading}>
-                                    {loading || weightLoading ? 'Saving...' : 'Save & Exit'}
+                                <Button onClick={handleSaveAndExit} disabled={isBusy}>
+                                    {isBusy ? 'Saving...' : 'Save & Exit'}
                                 </Button>
                             </div>
                         </div>

@@ -12,7 +12,8 @@ type UndoAction =
     | { type: 'MOVE_ITEM'; item: TravelItem; wasDropped: boolean }
     | { type: 'CLEAR_DROPPED'; items: TravelItem[] }
     | { type: 'DELETE_ALL'; items: TravelItem[] }
-    | { type: 'DROP_ALL'; items: TravelItem[] };
+    | { type: 'DROP_ALL'; items: TravelItem[] }
+    | { type: 'QUANTITY_CHANGE'; item: TravelItem; previousQuantity: number };
 
 export function useItems(presetId: number | null) {
     const [items, setItems] = useState<TravelItem[]>([]);
@@ -166,6 +167,12 @@ export function useItems(presetId: number | null) {
                     await Promise.all(action.items.map(item => itemsApi.updateDropped(item.id, false)));
                     break;
                 }
+                case 'QUANTITY_CHANGE': {
+                    await itemsApi.updateQuantity(action.item.id, action.previousQuantity);
+                    setItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
+                    setDroppedItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
+                    break;
+                }
             }
             await fetchItems();
         } catch (err) {
@@ -175,7 +182,7 @@ export function useItems(presetId: number | null) {
 
     const updateQuantity = useCallback(async (item: TravelItem, newQuantity: number) => {
         try {
-            console.log("updating");
+            recordAction({ type: 'QUANTITY_CHANGE', item, previousQuantity: item.quantity ?? 1 });
             await itemsApi.updateQuantity(item.id, newQuantity);
             setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
             setDroppedItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));

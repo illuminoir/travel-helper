@@ -36,7 +36,8 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
 
     const doAdd = async () => {
         try {
-            await onAdd(formatName(name), toGrams(parseFloat(weight), weightUnit));
+            console.log(weight);
+            await onAdd(formatName(name), toGrams(parseFloat(weight) || 0, weightUnit));
             setName('');
             setWeight('');
             setOpen(false);
@@ -51,13 +52,14 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
         e.preventDefault();
         setError(null);
 
-        if (!name.trim() || !weight) {
-            setError('All fields are required');
+        if (!name.trim()) {
+            setError('Name is required');
             return;
         }
 
-        const weightNum = parseFloat(weight);
-        if (isNaN(weightNum) || weightNum <= 0) {
+        const weightNum = parseFloat(weight) || 0;
+
+        if (weightNum < 0) {
             setError('Weight must be a positive number');
             return;
         }

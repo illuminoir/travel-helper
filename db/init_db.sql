@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS travel_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     preset_id INT,
     name VARCHAR(255),
-    weight DECIMAL(20, 3),
+    weight DECIMAL(20, 3) DEFAULT 0,
     dropped BOOLEAN DEFAULT FALSE,
     quantity INT DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
