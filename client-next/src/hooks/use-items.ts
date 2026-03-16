@@ -13,7 +13,8 @@ type UndoAction =
     | { type: 'CLEAR_DROPPED'; items: TravelItem[] }
     | { type: 'DELETE_ALL'; items: TravelItem[] }
     | { type: 'DROP_ALL'; items: TravelItem[] }
-    | { type: 'QUANTITY_CHANGE'; item: TravelItem; previousQuantity: number };
+    | { type: 'QUANTITY_CHANGE'; item: TravelItem; previousQuantity: number }
+    | { type: 'SORT_DROPPED'; previousOrder: TravelItem[] } ;
 
 export function useItems(presetId: number | null) {
     const [items, setItems] = useState<TravelItem[]>([]);
@@ -187,6 +188,13 @@ export function useItems(presetId: number | null) {
                     setDroppedItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
                     break;
                 }
+                case 'SORT_DROPPED': {
+                    setDroppedItems(action.previousOrder);
+                    await Promise.all(action.previousOrder.map((item, index) =>
+                        itemsApi.updateOrder(item.id, index)
+                    ));
+                    break;
+                }
             }
             await fetchItems();
         } catch (err) {
@@ -213,6 +221,13 @@ export function useItems(presetId: number | null) {
         ));
     }, []);
 
+    const sortDropped = useCallback(async (compareFn: (a: TravelItem, b: TravelItem) => number) => {
+        recordAction({ type: 'SORT_DROPPED', previousOrder: [...droppedItems] });
+        const sorted = [...droppedItems].sort(compareFn);
+        setDroppedItems(sorted);
+        await Promise.all(sorted.map((item, index) => itemsApi.updateOrder(item.id, index)));
+    }, [droppedItems]);
+
     return {
         items,
         droppedItems,
@@ -230,6 +245,7 @@ export function useItems(presetId: number | null) {
         undo,
         updateQuantity,
         reorderDropped,
+        sortDropped,
         refetchItems: fetchItems,
     };
 }

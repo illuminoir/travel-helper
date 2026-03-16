@@ -6,6 +6,7 @@ import { ItemCard } from './item-card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { SortButtons, SortState } from '@/components/sort-buttons';
 
 interface DropZoneProps {
     items: TravelItem[];
@@ -16,6 +17,8 @@ interface DropZoneProps {
     onQuantityChange?: (item: TravelItem, quantity: number) => void;
     onReorder: (items: TravelItem[]) => void;
     onDropNewItem: (item: TravelItem, index: number) => void;
+    sort: SortState;
+    onSort: (sort: SortState) => void;
 }
 
 export function DropZone({
@@ -27,9 +30,10 @@ export function DropZone({
                              onQuantityChange,
                              onReorder,
                              onDropNewItem,
+                             sort,
+                             onSort,
                          }: DropZoneProps) {
     const [search, setSearch] = useState('');
-    // insertIndex is where the line should appear BEFORE
     const [insertIndex, setInsertIndex] = useState<number | null>(null);
     const [isDragOverZone, setIsDragOverZone] = useState(false);
     const dragItemIndex = useRef<number | null>(null);
@@ -97,7 +101,6 @@ export function DropZone({
             if (fromIndex !== null && fromIndex !== idx) {
                 const reordered = [...items];
                 const [moved] = reordered.splice(fromIndex, 1);
-                // Adjust index after splice
                 const adjustedIdx = idx > fromIndex ? idx - 1 : idx;
                 reordered.splice(adjustedIdx, 0, moved);
                 onReorder(reordered);
@@ -122,9 +125,12 @@ export function DropZone({
         >
             <div className="flex items-center justify-between flex-shrink-0">
                 <h3 className="font-semibold text-lg">Dropped Items ({items.length})</h3>
-                <Button variant="outline" size="sm" onClick={onClearAll} className="text-xs" disabled={items.length === 0}>
-                    Clear All
-                </Button>
+                <div className="flex items-center gap-2">
+                    <SortButtons sort={sort} onChange={onSort} />
+                    <Button variant="outline" size="sm" onClick={onClearAll} className="text-xs" disabled={items.length === 0}>
+                        Clear All
+                    </Button>
+                </div>
             </div>
 
             <div className="relative flex-shrink-0">
@@ -156,7 +162,6 @@ export function DropZone({
                             onDragEnd={handleItemDragEnd}
                             className="relative mb-2"
                         >
-                            {/* Insert line ABOVE this item */}
                             {insertIndex === index && (
                                 <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full z-10" />
                             )}
@@ -171,7 +176,6 @@ export function DropZone({
                             />
                         </div>
                     ))}
-                    {/* Insert line AFTER last item */}
                     {insertIndex === filtered.length && (
                         <div className="h-0.5 bg-primary rounded-full mx-0 mt-1" />
                     )}
