@@ -23,7 +23,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
-import { fromGrams } from "@/lib/weight";
+import { fromGrams, smartWeight } from '@/lib/weight';
 
 export default function Home() {
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
@@ -35,15 +35,14 @@ export default function Home() {
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isEditItemOpen, setIsEditItemOpen] = useState(false);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [showClearAllDialog, setShowClearAllDialog] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [showImportWarning, setShowImportWarning] = useState(false);
     const [showNewPresetDialog, setShowNewPresetDialog] = useState(false);
     const [newPresetName, setNewPresetName] = useState('');
     const [showDeletePresetDialog, setShowDeletePresetDialog] = useState(false);
-    const fileInputRef = useRef<HTMLInputElement>(null);
     const [newPresetError, setNewPresetError] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { weightUnit, setWeightUnit } = useWeightUnit();
 
     const activePreset = presets.find(p => p.id === activePresetId);
@@ -126,6 +125,7 @@ export default function Home() {
             await createPreset(newPresetName.trim());
             setNewPresetName('');
             setShowNewPresetDialog(false);
+            setNewPresetError(null);
         } catch (err) {
             setNewPresetError(err instanceof Error ? err.message : 'Failed to create preset');
         }
@@ -147,7 +147,6 @@ export default function Home() {
 
     const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
     const convertedWeight = Math.round(fromGrams(totalGrams, weightUnit) * 1000) / 1000;
-
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
@@ -250,21 +249,12 @@ export default function Home() {
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Filters
                         </Button>
-                        <Button
-                            variant="outline"
-                            onClick={async () => {
-                                await deleteAll(items);
-                                setShowClearAllDialog(false);
-                            }}
-                            disabled={items.length === 0}>
-                            Delete All Items
-                        </Button>
                         <Button variant="outline" size="icon" onClick={undo} disabled={!canUndo}>
                             <Undo2 className="w-4 h-4" />
                         </Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="font-medium text-xl">Total Weight: {convertedWeight}</span>
+                        <span className="font-medium text-xl">Total Weight: {smartWeight(totalGrams, weightUnit)}</span>
                         <select
                             value={weightUnit}
                             onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
@@ -283,13 +273,24 @@ export default function Home() {
                     <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
                         <div className="flex items-center justify-between flex-shrink-0 mb-3">
                             <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => dropAll(items)}
-                                disabled={items.length === 0}>
-                                Drop All
-                            </Button>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={async () => await deleteAll(items)}
+                                    disabled={items.length === 0}
+                                >
+                                    <Trash2 className="w-3 h-3 mr-1" /> Delete All
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => dropAll(items)}
+                                    disabled={items.length === 0}
+                                >
+                                    Drop All
+                                </Button>
+                            </div>
                         </div>
                         <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
                         <div className="flex-1 min-h-0 overflow-y-auto mt-2">
@@ -400,30 +401,6 @@ export default function Home() {
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
                         <Button variant="destructive" onClick={handleImportConfirm}>Yes, replace everything</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showClearAllDialog} onOpenChange={setShowClearAllDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete All Items?</DialogTitle>
-                        <DialogDescription>
-                            This will permanently delete all {items.length} items. This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button variant="outline" onClick={() => setShowClearAllDialog(false)}>Cancel</Button>
-                        <Button
-                            variant="destructive"
-                            onClick={async () => {
-                                await Promise.all(items.map(item => deleteItem(item.id, false)));
-                                refetchItems();
-                                setShowClearAllDialog(false);
-                            }}
-                        >
-                            Delete All
-                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -21,3 +21,10 @@ export function fromGrams(grams: number, unit: WeightUnit): number {
 export function formatWeight(grams: number, unit: WeightUnit): string {
     return `${Math.round(fromGrams(grams, unit) * 1000) / 1000} ${unit}`;
 }
+
+export function smartWeight(grams: number, unit: WeightUnit): string {
+    if (unit === 'g' && grams >= 1000) {
+        return `${Math.round(grams / 1000 * 1000) / 1000} kg`;
+    }
+    return `${Math.round(fromGrams(grams, unit) * 1000) / 1000} ${unit}`;
+}

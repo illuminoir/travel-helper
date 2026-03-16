@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -24,12 +23,15 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
     const { weightUnit } = useWeightUnit();
 
-    const formatName = (raw: string) =>
-        raw.trim().replace(/\b\S+/g, word =>
-            word[1] === word[1]?.toUpperCase() && word[1] !== word[1]?.toLowerCase()
-                ? word
-                : word.charAt(0).toUpperCase() + word.slice(1)
-        );
+    const confirmRef = useRef<HTMLButtonElement>(null);
+
+    const formatName = (raw: string) => {
+        const exceptions = ['iphone', 'ipad', 'ipod', 'imac', 'iwatch'];
+        return raw.trim().toLowerCase()
+            .replace(/\b\w+/g, word =>
+                exceptions.includes(word) ? 'i' + word.slice(1).charAt(0).toUpperCase() + word.slice(2) : word.charAt(0).toUpperCase() + word.slice(1)
+            );
+    };
 
     const isDuplicate = (rawName: string) =>
         items.some(item => item.name.toLowerCase() === rawName.trim().toLowerCase());
@@ -37,7 +39,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
     const doAdd = async () => {
         try {
             console.log(weight);
-            await onAdd(formatName(name), toGrams(parseFloat(weight) || 0, weightUnit));
+            await onAdd(formatName(name), toGrams(parseFloat(weight) || 0, 'kg'));
             setName('');
             setWeight('');
             setOpen(false);
@@ -96,7 +98,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                             />
                         </div>
                         <div>
-                            <label className="text-sm font-medium">Weight ({weightUnit})</label>
+                            <label className="text-sm font-medium">Weight (kg)</label>
                             <Input
                                 type="number"
                                 min="0"
@@ -116,7 +118,10 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
             </Dialog>
 
             <Dialog open={showDuplicateWarning} onOpenChange={setShowDuplicateWarning}>
-                <DialogContent>
+                <DialogContent onOpenAutoFocus={(e) => {
+                    e.preventDefault();
+                    confirmRef.current?.focus();
+                }}>
                     <DialogHeader>
                         <DialogTitle>Duplicate Item</DialogTitle>
                         <DialogDescription>
@@ -125,7 +130,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                     </DialogHeader>
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setShowDuplicateWarning(false)}>Cancel</Button>
-                        <Button onClick={doAdd}>Add Anyway</Button>
+                        <Button ref={confirmRef} onClick={doAdd}>Add Anyway</Button>
                     </div>
                 </DialogContent>
             </Dialog>

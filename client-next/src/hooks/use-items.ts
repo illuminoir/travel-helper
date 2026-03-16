@@ -115,7 +115,10 @@ export function useItems(presetId: number | null) {
 
     const deleteAll = useCallback(async (itemsToDelete: TravelItem[]) => {
         recordAction({ type: 'DELETE_ALL', items: [...itemsToDelete] });
-        await Promise.all(itemsToDelete.map(item => itemsApi.delete(item.id)));
+        await Promise.all(itemsToDelete.map(async (item) => {
+            await tagMappingApi.removeAllTagsOnItem(item.id);
+            await itemsApi.delete(item.id);
+        }));
         await fetchItems();
     }, [fetchItems]);
 
@@ -134,7 +137,8 @@ export function useItems(presetId: number | null) {
         try {
             switch (action.type) {
                 case 'DELETE_ITEM': {
-                    const created = await itemsApi.add(action.item.name, parseInt(String(action.item.weight)), presetId);
+                    const created = await itemsApi.add(action.item.name, Number(action.item.weight), presetId);
+                    await itemsApi.updateQuantity(created.id, action.item.quantity ?? 1);
                     for (const tag of action.item.tags) {
                         await tagMappingApi.createTagMapping(created.id, tag.id);
                     }
@@ -153,7 +157,8 @@ export function useItems(presetId: number | null) {
                 }
                 case 'DELETE_ALL': {
                     for (const item of action.items) {
-                        const created = await itemsApi.add(item.name, item.weight, presetId);
+                        const created = await itemsApi.add(item.name, Number(item.weight), presetId);
+                        await itemsApi.updateQuantity(created.id, item.quantity ?? 1);
                         for (const tag of item.tags) {
                             await tagMappingApi.createTagMapping(created.id, tag.id);
                         }
