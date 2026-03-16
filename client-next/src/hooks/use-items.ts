@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { itemsApi, tagMappingApi } from '@/lib/api';
 import { TravelItem } from '@/types';
 
@@ -28,7 +28,7 @@ export function useItems(presetId: number | null) {
         try {
             const apiItems = await itemsApi.getAll(presetId);
             setItems(sortItemsByName(apiItems.filter(item => !item.dropped)));
-            setDroppedItems(sortItemsByName(apiItems.filter(item => item.dropped)));
+            setDroppedItems(apiItems.filter(item => item.dropped).sort((a, b) => a.orderIndex - b.orderIndex));
             setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load items');
@@ -84,15 +84,24 @@ export function useItems(presetId: number | null) {
         }
     }, [presetId, fetchItems]);
 
-    const moveItem = useCallback(async (item: TravelItem, toDropped: boolean) => {
+    const moveItem = useCallback(async (item: TravelItem, toDropped: boolean, orderIndex?: number) => {
         if (toDropped) {
             setItems(prev => sortItemsByName(prev.filter(i => i.id !== item.id)));
-            setDroppedItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, item]));
+            setDroppedItems(prev => {
+                if (prev.some(i => i.id === item.id)) return prev;
+                const idx = orderIndex ?? prev.length;
+                const updated = [...prev];
+                updated.splice(idx, 0, { ...item, orderIndex: idx });
+                return updated;
+            });
         } else {
-            setDroppedItems(prev => sortItemsByName(prev.filter(i => i.id !== item.id)));
+            setDroppedItems(prev => prev.filter(i => i.id !== item.id));
             setItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, item]));
         }
         await itemsApi.updateDropped(item.id, toDropped);
+        if (toDropped && orderIndex !== undefined) {
+            await itemsApi.updateOrder(item.id, orderIndex);
+        }
         recordAction({ type: 'MOVE_ITEM', item, wasDropped: !toDropped });
     }, []);
 
@@ -197,6 +206,13 @@ export function useItems(presetId: number | null) {
         }
     }, []);
 
+    const reorderDropped = useCallback(async (reordered: TravelItem[]) => {
+        setDroppedItems(reordered);
+        await Promise.all(reordered.map((item, index) =>
+            itemsApi.updateOrder(item.id, index)
+        ));
+    }, []);
+
     return {
         items,
         droppedItems,
@@ -213,6 +229,7 @@ export function useItems(presetId: number | null) {
         dropAll,
         undo,
         updateQuantity,
+        reorderDropped,
         refetchItems: fetchItems,
     };
 }

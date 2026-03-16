@@ -54,6 +54,11 @@ export const itemsApi = {
             method: 'PUT',
             body: JSON.stringify({ name }),
         }),
+    updateOrder: (id: number, orderIndex: number) =>
+        apiCall<TravelItem>(`/items/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ order_index: orderIndex }),
+        }),
     deleteAll: (presetId: number) =>
         apiCall<void>(`/items?preset_id=${presetId}`, { method: 'DELETE' }),
 };

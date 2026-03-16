@@ -8,6 +8,7 @@ export type TravelItem = {
     name: string
     weight: number
     quantity: number
+    orderIndex: number
     dropped: boolean
     tags: Tag[]
 }

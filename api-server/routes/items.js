@@ -9,18 +9,19 @@ router.get("/", async (req, res) => {
 
     try {
         const [rows] = await pool.query(`
-            SELECT 
+            SELECT
                 ti.*,
                 t.id as tag_id,
                 t.name as tag_name
             FROM travel_items ti
-            LEFT JOIN tag_mapping tm ON ti.id = tm.item_id
-            LEFT JOIN tags t ON tm.tag_id = t.id
+                     LEFT JOIN tag_mapping tm ON ti.id = tm.item_id
+                     LEFT JOIN tags t ON tm.tag_id = t.id
             WHERE ti.preset_id = ?
-            ORDER BY ti.name ASC
+            ORDER BY
+                CASE WHEN ti.dropped = 0 THEN ti.name END ASC,
+                CASE WHEN ti.dropped = 1 THEN ti.order_index END ASC
         `, [preset_id]);
 
-        // Group tags onto each item
         const itemMap = new Map();
         for (const row of rows) {
             if (!itemMap.has(row.id)) {
@@ -30,7 +31,8 @@ router.get("/", async (req, res) => {
                     weight: row.weight,
                     dropped: row.dropped,
                     quantity: row.quantity,
-                    presetId: row.presetId,
+                    order_index: row.order_index,
+                    preset_id: row.preset_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     tags: [],
@@ -70,7 +72,7 @@ router.put("/", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
     const { id } = req.params;
-    const { weight, dropped, quantity } = req.body;
+    const { weight, dropped, quantity, order_index } = req.body;
 
     const fields = [];
     const values = [];
@@ -79,6 +81,7 @@ router.put("/:id", async (req, res) => {
     if (typeof dropped === "boolean"){ fields.push("dropped = ?");  values.push(dropped); }
     if (typeof quantity === "number"){ fields.push("quantity = ?"); values.push(quantity); }
     if (typeof name === "string" && name.trim()) { fields.push("name = ?"); values.push(name.trim()); }
+    if (typeof order_index === "number") { fields.push("order_index = ?"); values.push(order_index); }
 
     if (fields.length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });

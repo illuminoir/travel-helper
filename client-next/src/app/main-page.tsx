@@ -1,7 +1,6 @@
 'use client';
 
-import React from 'react';
-import { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useItems } from '@/hooks/use-items';
 import { usePresets } from '@/hooks/use-presets';
 import { AddItemDialog } from '@/components/add-item-dialog';
@@ -10,11 +9,11 @@ import { DropZone } from '@/components/drop-zone';
 import { EditItemDialog } from '@/components/edit-item-dialog';
 import { TagFilter } from '@/components/tag-filter';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
-import { Trash2, ChevronDown, Plus, Undo2 } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, Undo2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -26,10 +25,12 @@ import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { fromGrams, smartWeight } from '@/lib/weight';
 
 export default function Home() {
+    type SortOption = 'name-asc' | 'name-desc' | 'weight-asc' | 'weight-desc';
+
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
     const { items, droppedItems, loading, error, setError, deleteItem, addItem,
         moveItem, clearDropped, refetchItems, updateWeight,
-        canUndo, undo, deleteAll, dropAll, updateQuantity } = useItems(activePresetId);
+        canUndo, undo, deleteAll, dropAll, updateQuantity, reorderDropped } = useItems(activePresetId);
 
     const [isDragOver, setIsDragOver] = useState(false);
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
@@ -44,6 +45,7 @@ export default function Home() {
     const [newPresetError, setNewPresetError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { weightUnit, setWeightUnit } = useWeightUnit();
+    const [sort, setSort] = useState<SortOption>('name-asc');
 
     const activePreset = presets.find(p => p.id === activePresetId);
 
@@ -58,13 +60,6 @@ export default function Home() {
         setIsDragOver(true);
     };
 
-    const handleDragLeave = () => setIsDragOver(false);
-
-    const handleDrop = (item: TravelItem) => {
-        setIsDragOver(false);
-        moveItem(item, true);
-    };
-
     const handleRestoreItem = (id: number) => {
         const itemToRestore = droppedItems.find((item) => item.id === id);
         if (itemToRestore) moveItem(itemToRestore, false);
@@ -76,7 +71,7 @@ export default function Home() {
         setIsEditItemOpen(true);
     };
 
-    const handleDoubleClick = (item: TravelItem) => moveItem(item, true);
+    const handleDoubleClick = (item: TravelItem) => moveItem(item, true, 0);
     const handleDoubleClickDropped = (item: TravelItem) => moveItem(item, false);
 
     const filteredItems = selectedTags.length === 0
@@ -306,16 +301,7 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div
-                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${isDragOver ? 'border-primary bg-primary/5' : 'border-border bg-card'}`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => {
-                            e.preventDefault();
-                            const data = e.dataTransfer.getData('application/json');
-                            if (data) handleDrop(JSON.parse(data));
-                        }}
-                    >
+                    <div className={`border-2 rounded-lg p-4 flex flex-col min-h-0 transition-colors ${isDragOver ? 'border-primary' : 'border-border bg-card'}`}>
                         <DropZone
                             items={droppedItems}
                             onRestore={handleRestoreItem}
@@ -323,6 +309,8 @@ export default function Home() {
                             onRightClick={handleRightClick}
                             onDoubleClick={handleDoubleClickDropped}
                             onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+                            onReorder={reorderDropped}
+                            onDropNewItem={(item, index) => moveItem(item, true, index)}
                         />
                     </div>
                 </div>
