@@ -11,7 +11,7 @@ import { useTags } from '@/hooks/use-tags';
 import type { Tag, TravelItem } from '@/types';
 import { Check, Trash2 } from 'lucide-react';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
-import { toGrams, fromGrams } from '@/lib/weight';
+import { fromGrams, toGrams } from '@/lib/weight';
 import { itemsApi } from '@/lib/api';
 
 interface EditItemDialogProps {
@@ -155,6 +155,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                                         const target = e.target;
                                         setTimeout(() => target.setSelectionRange(target.value.length, target.value.length), 0);
                                     }}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSaveAndExit(); }}
                                     className="flex-1"
                                 />
                                 <span className="text-sm text-muted-foreground">{weightUnit}</span>
