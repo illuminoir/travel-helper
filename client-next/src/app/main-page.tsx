@@ -22,8 +22,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
-import { smartWeight } from '@/lib/weight';
 import { SortButtons, SortState } from '@/components/sort-buttons';
+import { AirlineSelector } from "@/components/airline-selector";
 
 export default function Home() {
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
@@ -265,8 +265,8 @@ export default function Home() {
                 <Undo2 className="w-4 h-4" />
             </Button>
         </div>
-        <div className="flex items-center gap-2">
-            <span className="font-medium text-xl">Total Weight: {smartWeight(totalGrams, weightUnit)}</span>
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+            <AirlineSelector totalGrams={totalGrams} weightUnit={weightUnit} />
             <select
                 value={weightUnit}
                 onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
