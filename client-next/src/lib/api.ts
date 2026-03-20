@@ -28,10 +28,22 @@ export const presetsApi = {
 export const itemsApi = {
     getAll: (presetId: number) => apiCall<TravelItem[]>(`/items?preset_id=${presetId}`),
     delete: (id: number) => apiCall<void>(`/items/${id}`, { method: 'DELETE' }),
-    add: (name: string, weight: number, presetId: number) =>
+    add: (name: string, weight: number, presetId: number, options?: { quantity?: number; dropped?: boolean; orderIndex?: number }) =>
         apiCall<TravelItem>('/items', {
             method: 'PUT',
-            body: JSON.stringify({ name, weight, preset_id: presetId }),
+            body: JSON.stringify({
+                name,
+                weight,
+                preset_id: presetId,
+                ...(options?.quantity !== undefined && { quantity: options.quantity }),
+                ...(options?.dropped !== undefined && { dropped: options.dropped }),
+                ...(options?.orderIndex !== undefined && { order_index: options.orderIndex }),
+            }),
+        }),
+    batchAdd: (items: { name: string; weight: number; preset_id: number; quantity?: number; dropped?: boolean; order_index?: number }[]) =>
+        apiCall<{ insertedIds: number[] }>('/items/batch', {
+            method: 'PUT',
+            body: JSON.stringify({ items }),
         }),
     updateWeight: (id: number, weight: number) =>
         apiCall<TravelItem>(`/items/${id}`, {
@@ -128,7 +140,7 @@ export function exportToCSV(items: TravelItem[]): void {
 
 export type ImportData = {
     tags: { id: number; name: string }[];
-    items: { id: number; name: string; weight: number; tagIds: number[] }[];
+    items: { id: number; name: string; quantity: number; weight: number; tagIds: number[] }[];
 };
 
 export function parseCSV(csvText: string): ImportData {
@@ -173,12 +185,13 @@ export function parseCSV(csvText: string): ImportData {
             if (id !== -1) tagIds.push(id);
         }
 
-        //const quantity = Number(cols[2]?.trim()) || 1;
+        const quantity = Math.max(0, parseInt(cols[2]?.trim()) || 0);
 
         items.push({
             id: nextItemId++,
             name: itemName,
-            weight: 0, // not in this CSV format
+            weight: 0,
+            quantity,
             tagIds,
         });
     }
@@ -217,13 +230,27 @@ export async function importFromCSV(data: ImportData, presetId: number): Promise
         tagIdMap.set(tag.id, created.id);
     }
 
-    for (const item of data.items) {
-        const created = await itemsApi.add(item.name, item.weight, presetId);
-        for (const oldTagId of item.tagIds) {
-            const newTagId = tagIdMap.get(oldTagId);
-            if (newTagId !== undefined) {
-                await tagMappingApi.createTagMapping(created.id, newTagId);
-            }
-        }
-    }
+    if (data.items.length === 0) return;
+
+    const { insertedIds } = await itemsApi.batchAdd(
+        data.items.map(item => ({
+            name: item.name,
+            weight: item.weight,
+            preset_id: presetId,
+            quantity: item.quantity ?? 0,
+            dropped: false,
+            order_index: 0,
+        }))
+    );
+
+    await Promise.all(
+        data.items.flatMap((item, i) =>
+            item.tagIds.map(oldTagId => {
+                const newTagId = tagIdMap.get(oldTagId);
+                if (newTagId !== undefined) {
+                    return tagMappingApi.createTagMapping(insertedIds[i], newTagId);
+                }
+            }).filter(Boolean)
+        )
+    );
 }

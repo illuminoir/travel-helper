@@ -166,16 +166,23 @@ export function useItems(presetId: number | null) {
                     break;
                 }
                 case 'DELETE_ALL': {
-                    for (const item of action.items) {
-                        const created = await itemsApi.add(item.name, Number(item.weight), presetId);
-                        await itemsApi.updateQuantity(created.id, item.quantity ?? 1);
-                        for (const tag of item.tags) {
-                            await tagMappingApi.createTagMapping(created.id, tag.id);
-                        }
-                        if (item.dropped) {
-                            await itemsApi.updateDropped(created.id, true);
-                        }
-                    }
+                    setIsUndoing(true);
+                    const { insertedIds } = await itemsApi.batchAdd(
+                        action.items.map(item => ({
+                            name: item.name,
+                            weight: Number(item.weight),
+                            preset_id: presetId,
+                            quantity: item.quantity ?? 0,
+                            dropped: Boolean(item.dropped),
+                            order_index: item.orderIndex ?? 0,
+                        }))
+                    );
+                    await Promise.all(
+                        action.items.flatMap((item, i) =>
+                            item.tags.map(tag => tagMappingApi.createTagMapping(insertedIds[i], tag.id))
+                        )
+                    );
+                    setIsUndoing(false);
                     break;
                 }
                 case 'DROP_ALL': {

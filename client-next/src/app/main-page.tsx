@@ -12,20 +12,19 @@ import { EditItemDialog } from '@/components/edit-item-dialog';
 import { TagFilter } from '@/components/tag-filter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
-import { ChevronDown, LogOut, Plus, Trash2, Undo2 } from 'lucide-react';
+import { ChevronDown, LogOut, Trash2, Undo2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { SortButtons, SortState } from '@/components/sort-buttons';
 import { AirlineSelector } from '@/components/airline-selector';
+import { PresetManager } from "@/components/preset-manager";
 
 export default function Home() {
     const { user, loading: authLoading, logout } = useAuth();
@@ -44,10 +43,6 @@ export default function Home() {
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [showImportWarning, setShowImportWarning] = useState(false);
-    const [showNewPresetDialog, setShowNewPresetDialog] = useState(false);
-    const [newPresetName, setNewPresetName] = useState('');
-    const [showDeletePresetDialog, setShowDeletePresetDialog] = useState(false);
-    const [newPresetError, setNewPresetError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
@@ -132,24 +127,6 @@ export default function Home() {
         }
     };
 
-    const handleCreatePreset = async () => {
-        if (!newPresetName.trim()) return;
-        try {
-            await createPreset(newPresetName.trim());
-            setNewPresetName('');
-            setShowNewPresetDialog(false);
-            setNewPresetError(null);
-        } catch (err) {
-            setNewPresetError(err instanceof Error ? err.message : 'Failed to create preset');
-        }
-    };
-
-    const handleDeletePreset = async () => {
-        if (activePresetId === null) return;
-        await deletePreset(activePresetId);
-        setShowDeletePresetDialog(false);
-    };
-
     const handleDroppedSort = (sort: SortState) => {
         setDroppedSort(sort);
         sortDropped(toCompareFn(sort));
@@ -174,6 +151,7 @@ export default function Home() {
         );
     }
 
+
     if (!user) return null;
 
     const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
@@ -188,40 +166,17 @@ export default function Home() {
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold">Travel helper</h1>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" className="flex items-center gap-2 min-w-40">
-                                        <span className="flex-1 text-left truncate">{activePreset?.name ?? 'Select preset'}</span>
-                                        <ChevronDown className="h-4 w-4 shrink-0" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="start" className="min-w-40">
-                                    {presets.map(preset => (
-                                        <DropdownMenuItem
-                                            key={preset.id}
-                                            onClick={() => setActivePresetId(preset.id)}
-                                            className={activePresetId === preset.id ? 'bg-muted font-medium' : ''}
-                                        >
-                                            {preset.name}
-                                        </DropdownMenuItem>
-                                    ))}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => setShowNewPresetDialog(true)}>
-                                        <Plus className="h-4 w-4 mr-2" /> New Preset
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => setShowDeletePresetDialog(true)}
-                                disabled={presets.length <= 1}
-                                title="Delete current preset"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </div>
+                        <PresetManager
+                            presets={presets}
+                            activePresetId={activePresetId}
+                            setActivePresetId={setActivePresetId}
+                            createPreset={createPreset}
+                            deletePreset={deletePreset}
+                            items={items}
+                            droppedItems={droppedItems}
+                            onError={(msg) => setError(msg)}
+                            refetchItems={refetchItems}
+                        />
                     </div>
 
                     {/* Export / Import */}
@@ -381,45 +336,6 @@ export default function Home() {
                     </div>
                 </div>
             )}
-
-            <Dialog open={showNewPresetDialog} onOpenChange={(open) => {
-                setShowNewPresetDialog(open);
-                if (!open) { setNewPresetName(''); setNewPresetError(null); }
-            }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>New Preset</DialogTitle>
-                        <DialogDescription>Give your preset a name.</DialogDescription>
-                    </DialogHeader>
-                    <Input
-                        placeholder="e.g. Weekend Trip"
-                        value={newPresetName}
-                        onChange={(e) => { setNewPresetName(e.target.value); setNewPresetError(null); }}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreatePreset()}
-                        autoFocus
-                    />
-                    {newPresetError && <p className="text-sm text-destructive">{newPresetError}</p>}
-                    <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" onClick={() => setShowNewPresetDialog(false)}>Cancel</Button>
-                        <Button onClick={handleCreatePreset} disabled={!newPresetName.trim()}>Create</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog open={showDeletePresetDialog} onOpenChange={setShowDeletePresetDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Preset?</DialogTitle>
-                        <DialogDescription>
-                            This will permanently delete <strong>{activePreset?.name}</strong> and all its items. This cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button variant="outline" onClick={() => setShowDeletePresetDialog(false)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleDeletePreset}>Delete</Button>
-                    </div>
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={showImportWarning} onOpenChange={setShowImportWarning}>
                 <DialogContent>

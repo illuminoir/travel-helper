@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { presetsApi } from '@/lib/api';
 
 export type Preset = { id: number; name: string; created_at: string };
@@ -56,7 +56,7 @@ export function usePresets() {
         setPresets(prev => {
             const remaining = prev.filter(p => p.id !== id);
             if (remaining.length > 0) {
-                setActivePresetId(remaining[0].id);
+                setActivePresetId(remaining[remaining.length - 1].id);
             }
             return remaining;
         });

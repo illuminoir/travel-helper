@@ -52,7 +52,7 @@ router.get("/", async (req, res) => {
 
 
 router.put("/", async (req, res) => {
-    const { name, weight, preset_id } = req.body;
+    const { name, weight, preset_id, quantity, dropped, order_index } = req.body;
 
     if (!name || typeof weight !== "number" || !preset_id) {
         return res.status(400).json({ error: "Missing or invalid 'name', 'weight', or 'preset_id'" });
@@ -60,15 +60,49 @@ router.put("/", async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            "INSERT INTO travel_items (name, weight, preset_id) VALUES (?, ?, ?)",
-            [name, weight, preset_id]
+            "INSERT INTO travel_items (name, weight, preset_id, quantity, dropped, order_index) VALUES (?, ?, ?, ?, ?, ?)",
+            [name, weight, preset_id, quantity ?? 0, dropped ? 1 : 0, order_index ?? 0]
         );
-        res.status(201).json({ message: "Item inserted", id: result.insertId, inserted: { name, weight, preset_id } });
+        res.status(201).json({ message: "Item inserted", id: result.insertId });
     } catch (err) {
         console.log(err);
         res.status(500).json({ error: "Database error" });
     }
 });
+
+router.put("/batch", async (req, res) => {
+    const { items } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: "Missing or invalid 'items'" });
+    }
+
+    try {
+        const values = items.map(item => [
+            item.name,
+            item.weight,
+            item.preset_id,
+            item.quantity ?? 0,
+            item.dropped ? 1 : 0,
+            item.order_index ?? 0,
+        ]);
+
+        const [result] = await pool.query(
+            "INSERT INTO travel_items (name, weight, preset_id, quantity, dropped, order_index) VALUES ?",
+            [values]
+        );
+
+        const insertedIds = Array.from(
+            { length: result.affectedRows },
+            (_, i) => result.insertId + i
+        );
+
+        res.status(201).json({ insertedIds });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Database error" });
+    }
+});
+
 
 router.put("/:id", async (req, res) => {
     const { id } = req.params;
@@ -103,7 +137,6 @@ router.put("/:id", async (req, res) => {
         res.status(500).json({ error: "Database error" });
     }
 });
-
 
 
 router.delete("/:id", async (req, res) => {

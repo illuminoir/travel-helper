@@ -10,17 +10,16 @@ export function toGrams(value: number, unit: WeightUnit): number {
 }
 
 export function fromGrams(grams: number, unit: WeightUnit): number {
+    let result: number;
     switch (unit) {
-        case 'g':  return grams;
-        case 'kg': return grams / 1000;
-        case 'lb': return grams / 453.592;
-        case 'oz': return grams / 28.3495;
+        case 'g':  result = grams; break;
+        case 'kg': result = grams / 1000; break;
+        case 'lb': result = grams / 453.592; break;
+        case 'oz': result = grams / 28.3495; break;
     }
+    return Math.round(result * 100) / 100;
 }
 
-export function formatWeight(grams: number, unit: WeightUnit): string {
-    return `${Math.round(fromGrams(grams, unit) * 1000) / 1000} ${unit}`;
-}
 
 export function smartWeight(grams: number, unit: WeightUnit): string {
     if (unit === 'g' && grams >= 1000) {
