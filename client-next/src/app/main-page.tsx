@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useItems } from '@/hooks/use-items';
 import { usePresets } from '@/hooks/use-presets';
+import { useAuth } from '@/contexts/auth-context';
 import { AddItemDialog } from '@/components/add-item-dialog';
 import { ItemsList } from '@/components/items-list';
 import { DropZone } from '@/components/drop-zone';
@@ -13,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
-import { ChevronDown, Plus, Trash2, Undo2 } from 'lucide-react';
+import { ChevronDown, LogOut, Plus, Trash2, Undo2 } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,9 +25,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { SortButtons, SortState } from '@/components/sort-buttons';
-import { AirlineSelector } from "@/components/airline-selector";
+import { AirlineSelector } from '@/components/airline-selector';
 
 export default function Home() {
+    const { user, loading: authLoading, logout } = useAuth();
+    const router = useRouter();
+
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
     const {
         items, droppedItems, loading, error, setError, deleteItem, addItem,
@@ -47,6 +52,12 @@ export default function Home() {
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
     const [droppedSort, setDroppedSort] = useState<SortState>({ field: 'name', direction: 'asc' });
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.push('/login');
+        }
+    }, [user, authLoading, router]);
 
     const activePreset = presets.find(p => p.id === activePresetId);
 
@@ -150,13 +161,20 @@ export default function Home() {
         await undo();
     };
 
-    if (presetsLoading || loading) {
+    const handleLogout = async () => {
+        await logout();
+        router.push('/login');
+    };
+
+    if (authLoading || presetsLoading || loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <p className="text-muted-foreground">Loading...</p>
             </div>
         );
     }
+
+    if (!user) return null;
 
     const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
 
@@ -167,10 +185,9 @@ export default function Home() {
                 {/* Header */}
                 <div className="flex items-start justify-between">
                     <div className="flex flex-col gap-2">
-                        <h1 className="text-3xl font-bold">Item Manager</h1>
-                        <p className="text-muted-foreground text-sm">
-                            Drag items to organize them • Double-click to move • Right-click to edit • Click tags to filter
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold">Travel helper</h1>
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -209,199 +226,215 @@ export default function Home() {
 
                     {/* Export / Import */}
                     <div className="flex gap-2 mt-1">
-                        <Button variant="outline" onClick={handleExport}>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                    Export CSV
-                </Button>
-                <Button variant="outline" onClick={handleImportClick} disabled={isImporting}>
-                    {isImporting ? (
-                        <>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 animate-spin">
-                                <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                            </svg>
-                            Importing…
-                        </>
-                    ) : (
-                        <>
+                        <Button variant="outline" onClick={handleExport} className="cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
                                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="7 10 12 15 17 10" />
-                                <line x1="12" y1="15" x2="12" y2="3" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
                             </svg>
-                            Import CSV
-                        </>
-                    )}
-                </Button>
-                <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
-            </div>
-        </div>
+                            Export CSV
+                        </Button>
+                        <Button variant="outline" onClick={handleImportClick} disabled={isImporting} className="cursor-pointer">
+                            {isImporting ? (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 animate-spin">
+                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                    </svg>
+                                    Importing…
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                        <polyline points="7 10 12 15 17 10" />
+                                        <line x1="12" y1="15" x2="12" y2="3" />
+                                    </svg>
+                                    Import CSV
+                                </>
+                            )}
+                        </Button>
+                        <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
 
-    {/* Error banners */}
-    {error && (
-        <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-            <span>{error}</span>
-            <button onClick={() => setError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
-        </div>
-    )}
-    {importError && (
-        <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
-            <span>Import error: {importError}</span>
-            <button onClick={() => setImportError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
-        </div>
-    )}
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">{user.email}</span>
+                            <Button variant="outline" size="icon" onClick={handleLogout} title="Sign out" className="cursor-pointer">
+                                <LogOut className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
 
-    {/* Toolbar row */}
-    <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-            <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
-            <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
-                Clear Filters
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleUndo} disabled={!canUndo}>
-                <Undo2 className="w-4 h-4" />
-            </Button>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap justify-end">
-            <AirlineSelector totalGrams={totalGrams} weightUnit={weightUnit} />
-            <select
-                value={weightUnit}
-                onChange={(e) => setWeightUnit(e.target.value as 'g' | 'kg' | 'lb' | 'oz')}
-                className="border border-border rounded-md px-2 py-1 text-sm bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-                <option value="g">g</option>
-                <option value="kg">kg</option>
-                <option value="lb">lb</option>
-                <option value="oz">oz</option>
-            </select>
-        </div>
-    </div>
+                {/* Error banners */}
+                {error && (
+                    <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
+                        <span>{error}</span>
+                        <button onClick={() => setError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
+                    </div>
+                )}
+                {importError && (
+                    <div className="flex items-center justify-between p-4 bg-destructive/10 text-destructive rounded-lg text-sm">
+                        <span>Import error: {importError}</span>
+                        <button onClick={() => setImportError(null)} className="ml-4 hover:opacity-70 transition-opacity cursor-pointer" aria-label="Dismiss">✕</button>
+                    </div>
+                )}
 
-    {/* Main panels */}
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
-        <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-            <div className="flex items-center justify-between flex-shrink-0 mb-3">
-                <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
-                <div className="flex gap-2 items-center">
-                    <SortButtons sort={availableSort} onChange={setAvailableSort} />
-                    <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
-                        <Trash2 className="w-3 h-3 mr-1" /> Delete All
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => dropAll(items)} disabled={items.length === 0}>
-                        Drop All
-                    </Button>
+                {/* Toolbar row */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
+                        <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
+                            Clear Filters
+                        </Button>
+                        <Button variant="outline" size="icon" onClick={handleUndo} disabled={!canUndo}>
+                            <Undo2 className="w-4 h-4" />
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <AirlineSelector totalGrams={totalGrams} weightUnit={weightUnit} />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="flex items-center gap-2 w-12" size="sm">
+                                    <span>{weightUnit}</span>
+                                    <ChevronDown className="h-4 w-4 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {(['g', 'kg', 'lb', 'oz'] as const).map(unit => (
+                                    <DropdownMenuItem
+                                        key={unit}
+                                        onClick={() => setWeightUnit(unit)}
+                                        className={weightUnit === unit ? 'bg-muted font-medium' : ''}
+                                    >
+                                        {unit}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
+
+                {/* Main panels */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                        <div className="flex items-center justify-between flex-shrink-0 mb-3">
+                            <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
+                            <div className="flex gap-2 items-center">
+                                <SortButtons sort={availableSort} onChange={setAvailableSort} />
+                                <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
+                                    <Trash2 className="w-3 h-3 mr-1" /> Delete All
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => dropAll(items)} disabled={items.length === 0}>
+                                    Drop All
+                                </Button>
+                            </div>
+                        </div>
+                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
+                        <div className="flex-1 min-h-0 overflow-y-auto mt-2">
+                            <ItemsList
+                                items={[...filteredItems].sort(toCompareFn(availableSort))}
+                                onDelete={(id) => deleteItem(id, false)}
+                                onDragStart={handleDragStart}
+                                onRightClick={handleRightClick}
+                                onTagClick={handleTagClick}
+                                onDoubleClick={handleDoubleClick}
+                                onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                        <DropZone
+                            items={droppedItems}
+                            onRestore={handleRestoreItem}
+                            onClearAll={clearDropped}
+                            onRightClick={handleRightClick}
+                            onDoubleClick={handleDoubleClickDropped}
+                            onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+                            onReorder={reorderDropped}
+                            onDropNewItem={(item, index) => moveItem(item, true, index)}
+                            sort={droppedSort}
+                            onSort={handleDroppedSort}
+                        />
+                    </div>
                 </div>
             </div>
-            <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
-            <div className="flex-1 min-h-0 overflow-y-auto mt-2">
-                <ItemsList
-                    items={[...filteredItems].sort(toCompareFn(availableSort))}
-                    onDelete={(id) => deleteItem(id, false)}
-                    onDragStart={handleDragStart}
-                    onRightClick={handleRightClick}
-                    onTagClick={handleTagClick}
-                    onDoubleClick={handleDoubleClick}
-                    onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+
+            {/* Edit Item Dialog */}
+            {selectedItem && (
+                <EditItemDialog
+                    item={selectedItem}
+                    items={[...items, ...droppedItems]}
+                    isOpen={isEditItemOpen}
+                    onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); }}
+                    onSaveWeight={async (item, newWeight) => { await updateWeight(item, newWeight); }}
+                    refetchItems={refetchItems}
                 />
-            </div>
-        </div>
+            )}
 
-        <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-            <DropZone
-                items={droppedItems}
-                onRestore={handleRestoreItem}
-                onClearAll={clearDropped}
-                onRightClick={handleRightClick}
-                onDoubleClick={handleDoubleClickDropped}
-                onQuantityChange={(item, qty) => updateQuantity(item, qty)}
-                onReorder={reorderDropped}
-                onDropNewItem={(item, index) => moveItem(item, true, index)}
-                sort={droppedSort}
-                onSort={handleDroppedSort}
-            />
-        </div>
-    </div>
-</div>
+            {isImporting && (
+                <div className="fixed inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">
+                    <div className="flex flex-col items-center gap-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-primary">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        <p className="text-sm font-medium">Importing CSV...</p>
+                    </div>
+                </div>
+            )}
 
-    {/* Edit Item Dialog */}
-    {selectedItem && (
-        <EditItemDialog
-            item={selectedItem}
-            items={[...items, ...droppedItems]}
-            isOpen={isEditItemOpen}
-            onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); }}
-            onSaveWeight={async (item, newWeight) => { await updateWeight(item, newWeight); }}
-            refetchItems={refetchItems}
-        />
-    )}
+            <Dialog open={showNewPresetDialog} onOpenChange={(open) => {
+                setShowNewPresetDialog(open);
+                if (!open) { setNewPresetName(''); setNewPresetError(null); }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>New Preset</DialogTitle>
+                        <DialogDescription>Give your preset a name.</DialogDescription>
+                    </DialogHeader>
+                    <Input
+                        placeholder="e.g. Weekend Trip"
+                        value={newPresetName}
+                        onChange={(e) => { setNewPresetName(e.target.value); setNewPresetError(null); }}
+                        onKeyDown={(e) => e.key === 'Enter' && handleCreatePreset()}
+                        autoFocus
+                    />
+                    {newPresetError && <p className="text-sm text-destructive">{newPresetError}</p>}
+                    <div className="flex justify-end gap-2 pt-2">
+                        <Button variant="outline" onClick={() => setShowNewPresetDialog(false)}>Cancel</Button>
+                        <Button onClick={handleCreatePreset} disabled={!newPresetName.trim()}>Create</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-    {isImporting && (
-        <div className="fixed inset-0 bg-background/60 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="flex flex-col items-center gap-3">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin text-primary">
-                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                </svg>
-                <p className="text-sm font-medium">Importing CSV...</p>
-            </div>
-        </div>
-    )}
+            <Dialog open={showDeletePresetDialog} onOpenChange={setShowDeletePresetDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Delete Preset?</DialogTitle>
+                        <DialogDescription>
+                            This will permanently delete <strong>{activePreset?.name}</strong> and all its items. This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setShowDeletePresetDialog(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleDeletePreset}>Delete</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
-    <Dialog open={showNewPresetDialog} onOpenChange={(open) => {
-        setShowNewPresetDialog(open);
-        if (!open) { setNewPresetName(''); setNewPresetError(null); }
-    }}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>New Preset</DialogTitle>
-                <DialogDescription>Give your preset a name.</DialogDescription>
-            </DialogHeader>
-            <Input
-                placeholder="e.g. Weekend Trip"
-                value={newPresetName}
-                onChange={(e) => { setNewPresetName(e.target.value); setNewPresetError(null); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreatePreset()}
-                autoFocus
-            />
-            {newPresetError && <p className="text-sm text-destructive">{newPresetError}</p>}
-            <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" onClick={() => setShowNewPresetDialog(false)}>Cancel</Button>
-                <Button onClick={handleCreatePreset} disabled={!newPresetName.trim()}>Create</Button>
-            </div>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog open={showDeletePresetDialog} onOpenChange={setShowDeletePresetDialog}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Delete Preset?</DialogTitle>
-                <DialogDescription>
-                    This will permanently delete <strong>{activePreset?.name}</strong> and all its items. This cannot be undone.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowDeletePresetDialog(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleDeletePreset}>Delete</Button>
-            </div>
-        </DialogContent>
-    </Dialog>
-
-    <Dialog open={showImportWarning} onOpenChange={setShowImportWarning}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Replace all data?</DialogTitle>
-                <DialogDescription>
-                    Importing a CSV will permanently delete <strong>all current items and tags</strong> in this preset and replace them with the contents of the file. This cannot be undone.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
-                <Button variant="destructive" onClick={handleImportConfirm}>Yes, replace everything</Button>
-            </div>
-        </DialogContent>
-    </Dialog>
-</main>
-);
+            <Dialog open={showImportWarning} onOpenChange={setShowImportWarning}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Replace all data?</DialogTitle>
+                        <DialogDescription>
+                            Importing a CSV will permanently delete <strong>all current items and tags</strong> in this preset and replace them with the contents of the file. This cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={handleImportConfirm}>Yes, replace everything</Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </main>
+    );
 }

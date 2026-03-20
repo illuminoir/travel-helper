@@ -5,14 +5,13 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/a
 async function apiCall<T>(endpoint: string, options?: RequestInit): Promise<T> {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         headers: { 'Content-Type': 'application/json', ...options?.headers },
+        credentials: 'include',
         ...options,
     });
-
     if (!response.ok) {
         const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? `API error: ${response.statusText}`);
     }
-
     return response.json();
 }
 

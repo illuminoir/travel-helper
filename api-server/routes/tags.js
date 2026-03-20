@@ -5,43 +5,35 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
     try {
-        const [tags] = await pool.query("SELECT * FROM tags");
+        const [tags] = await pool.query("SELECT * FROM tags WHERE user_id = ?", [req.userId]);
         return res.json(tags);
     } catch (err) {
         console.error(err);
-        res.status(500).json({error: "Database error when getting all tags"});
+        res.status(500).json({ error: "Database error when getting all tags" });
     }
 });
 
 router.put("/", async (req, res) => {
     const { name } = req.body;
-
-    if (!name) {
-        return res.status(400).json({ error: "Missing or invalid 'name'" });
-    }
+    if (!name) return res.status(400).json({ error: "Missing or invalid 'name'" });
 
     try {
         const [result] = await pool.query(
-            "INSERT INTO tags (name) VALUES (?)",
-            [name]
+            "INSERT INTO tags (name, user_id) VALUES (?, ?)",
+            [name, req.userId]
         );
-
         res.status(201).json({ message: "Tag created", id: result.insertId, name });
     } catch (err) {
-        if (err.code === "ER_DUP_ENTRY") {
-            res.status(409).json({ error: `Tag with name '${name}' already exists` });
-        } else {
-            console.log(err);
-            res.status(500).json({ error: "Database error" });
-        }
+        console.log(err);
+        res.status(500).json({ error: "Database error" });
     }
 });
 
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
-        await pool.query("DELETE FROM tags WHERE id = ?", [id]);
-        res.json({ success: true, message: "Item deleted." });
+        await pool.query("DELETE FROM tags WHERE id = ? AND user_id = ?", [id, req.userId]);
+        res.json({ success: true, message: "Tag deleted." });
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Database error" });
@@ -50,7 +42,7 @@ router.delete("/:id", async (req, res) => {
 
 router.delete("/", async (req, res) => {
     try {
-        await pool.query("DELETE FROM tags");
+        await pool.query("DELETE FROM tags WHERE user_id = ?", [req.userId]);
         res.json({ success: true, message: "Tags deleted." });
     } catch (err) {
         console.error(err);

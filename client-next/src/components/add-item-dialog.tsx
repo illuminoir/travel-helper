@@ -3,7 +3,14 @@
 import React, { useRef, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
@@ -78,7 +85,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
         <>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button className="gap-2">
+                    <Button className="gap-2 cursor-pointer">
                         <Plus className="w-4 h-4" />
                         Add Item
                     </Button>
