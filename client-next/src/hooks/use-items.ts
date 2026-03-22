@@ -166,7 +166,6 @@ export function useItems(presetId: number | null) {
                     break;
                 }
                 case 'DELETE_ALL': {
-                    setIsUndoing(true);
                     const { insertedIds } = await itemsApi.batchAdd(
                         action.items.map(item => ({
                             name: item.name,
@@ -182,7 +181,6 @@ export function useItems(presetId: number | null) {
                             item.tags.map(tag => tagMappingApi.createTagMapping(insertedIds[i], tag.id))
                         )
                     );
-                    setIsUndoing(false);
                     break;
                 }
                 case 'DROP_ALL': {

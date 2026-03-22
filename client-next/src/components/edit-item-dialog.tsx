@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
@@ -33,9 +33,7 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
     const [nameError, setNameError] = useState('');
 
     // Weight state
-    const [weight, setWeight] = useState(
-        String(Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000)
-    );
+    const [weight, setWeight] = useState('');
     const [weightLoading, setWeightLoading] = useState(false);
     const [weightError, setWeightError] = useState('');
 
@@ -44,6 +42,12 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
     const [selectedTags, setSelectedTags] = useState<string[]>(item.tags.map(t => t.name));
     const [isCreateTagDialogOpen, setIsCreateTagDialogOpen] = useState(false);
     const [tagToDelete, setTagToDelete] = useState<Tag | null>(null);
+
+    useEffect(() => {
+        setWeight(
+            String(Math.round(fromGrams(parseFloat(String(item.weight)), weightUnit) * 1000) / 1000)
+        );
+    }, [item.weight, weightUnit]);
 
     const handleSaveName = async () => {
         if (!name.trim()) { setNameError('Name cannot be empty.'); return; }
@@ -151,10 +155,6 @@ export function EditItemDialog({ item, items, isOpen, onClose, onSaveWeight, ref
                                     step="0.1"
                                     value={weight}
                                     onChange={(e) => { setWeight(e.target.value); setWeightError(''); }}
-                                    onFocus={(e) => {
-                                        const target = e.target;
-                                        setTimeout(() => target.setSelectionRange(target.value.length, target.value.length), 0);
-                                    }}
                                     onKeyDown={(e) => { if (e.key === 'Enter') handleSaveAndExit(); }}
                                     className="flex-1"
                                 />
