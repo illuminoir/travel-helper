@@ -24,7 +24,7 @@ import {
 import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { SortButtons, SortState } from '@/components/sort-buttons';
 import { AirlineSelector } from '@/components/airline-selector';
-import { PresetManager } from "@/components/preset-manager";
+import { PresetManager } from '@/components/preset-manager';
 
 export default function Home() {
     const { user, loading: authLoading, logout } = useAuth();
@@ -49,22 +49,14 @@ export default function Home() {
     const [droppedSort, setDroppedSort] = useState<SortState>({ field: 'name', direction: 'asc' });
 
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/login');
-        }
+        if (!authLoading && !user) router.push('/login');
     }, [user, authLoading, router]);
-
-    const activePreset = presets.find(p => p.id === activePresetId);
 
     const toCompareFn = (sort: SortState) => (a: TravelItem, b: TravelItem) => {
         if (sort.field === 'name') {
-            return sort.direction === 'asc'
-                ? a.name.localeCompare(b.name)
-                : b.name.localeCompare(a.name);
+            return sort.direction === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name);
         } else {
-            return sort.direction === 'asc'
-                ? Number(a.weight) - Number(b.weight)
-                : Number(b.weight) - Number(a.weight);
+            return sort.direction === 'asc' ? Number(a.weight) - Number(b.weight) : Number(b.weight) - Number(a.weight);
         }
     };
 
@@ -151,72 +143,71 @@ export default function Home() {
         );
     }
 
-
     if (!user) return null;
 
     const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-background to-muted p-6">
-            <div className="max-w-6xl mx-auto space-y-8">
+        <main className="min-h-screen bg-gradient-to-br from-background to-muted p-4 sm:p-6">
+            <div className="max-w-6xl mx-auto space-y-6">
 
                 {/* Header */}
-                <div className="flex items-start justify-between">
-                    <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold">Travel helper</h1>
-                        </div>
-                        <PresetManager
-                            presets={presets}
-                            activePresetId={activePresetId}
-                            setActivePresetId={setActivePresetId}
-                            createPreset={createPreset}
-                            deletePreset={deletePreset}
-                            items={items}
-                            droppedItems={droppedItems}
-                            onError={(msg) => setError(msg)}
-                            refetchItems={refetchItems}
-                        />
-                    </div>
+                <div className="flex flex-col gap-3">
+                    {/* Top row: title + actions */}
+                    <div className="flex items-start justify-between gap-3">
+                        <h1 className="text-2xl sm:text-3xl font-bold">Travel helper</h1>
 
-                    {/* Export / Import */}
-                    <div className="flex gap-2 mt-1">
-                        <Button variant="outline" onClick={handleExport} className="cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                <polyline points="17 8 12 3 7 8" />
-                                <line x1="12" y1="3" x2="12" y2="15" />
-                            </svg>
-                            Export CSV
-                        </Button>
-                        <Button variant="outline" onClick={handleImportClick} disabled={isImporting} className="cursor-pointer">
-                            {isImporting ? (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 animate-spin">
-                                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                                    </svg>
-                                    Importing…
-                                </>
-                            ) : (
-                                <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                        <polyline points="7 10 12 15 17 10" />
-                                        <line x1="12" y1="15" x2="12" y2="3" />
-                                    </svg>
-                                    Import CSV
-                                </>
-                            )}
-                        </Button>
-                        <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
-
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">{user.email}</span>
-                            <Button variant="outline" size="icon" onClick={handleLogout} title="Sign out" className="cursor-pointer">
+                        {/* Export / Import / User */}
+                        <div className="flex flex-wrap gap-2 items-center justify-end">
+                            <Button variant="outline" size="sm" onClick={handleExport} className="cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <span className="hidden sm:inline">Export CSV</span>
+                                <span className="sm:hidden">Export</span>
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleImportClick} disabled={isImporting} className="cursor-pointer">
+                                {isImporting ? (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 animate-spin">
+                                            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                                        </svg>
+                                        Importing…
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                            <polyline points="7 10 12 15 17 10" />
+                                            <line x1="12" y1="15" x2="12" y2="3" />
+                                        </svg>
+                                        <span className="hidden sm:inline">Import CSV</span>
+                                        <span className="sm:hidden">Import</span>
+                                    </>
+                                )}
+                            </Button>
+                            <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
+                            <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+                            <Button variant="outline" size="icon" onClick={handleLogout} title="Sign out" className="cursor-pointer h-8 w-8">
                                 <LogOut className="h-4 w-4" />
                             </Button>
                         </div>
                     </div>
+
+                    {/* Preset manager */}
+                    <PresetManager
+                        presets={presets}
+                        activePresetId={activePresetId}
+                        setActivePresetId={setActivePresetId}
+                        createPreset={createPreset}
+                        deletePreset={deletePreset}
+                        items={items}
+                        droppedItems={droppedItems}
+                        onError={(msg) => setError(msg)}
+                        refetchItems={refetchItems}
+                    />
                 </div>
 
                 {/* Error banners */}
@@ -234,8 +225,8 @@ export default function Home() {
                 )}
 
                 {/* Toolbar row */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Filters
@@ -244,13 +235,13 @@ export default function Home() {
                             <Undo2 className="w-4 h-4" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                         <AirlineSelector totalGrams={totalGrams} weightUnit={weightUnit} />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="flex items-center gap-2 w-12" size="sm">
+                                <Button variant="outline" size="sm" className="flex items-center gap-1 w-16">
                                     <span>{weightUnit}</span>
-                                    <ChevronDown className="h-4 w-4 shrink-0" />
+                                    <ChevronDown className="h-3 w-3 shrink-0" />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -269,11 +260,11 @@ export default function Home() {
                 </div>
 
                 {/* Main panels */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-16rem)]">
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
-                        <div className="flex items-center justify-between flex-shrink-0 mb-3">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[calc(100vh-16rem)]">
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card h-[60vh] lg:h-auto">
+                        <div className="flex items-center justify-between flex-shrink-0 mb-3 flex-wrap gap-2">
                             <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
-                            <div className="flex gap-2 items-center">
+                            <div className="flex gap-2 items-center flex-wrap">
                                 <SortButtons sort={availableSort} onChange={setAvailableSort} />
                                 <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
                                     <Trash2 className="w-3 h-3 mr-1" /> Delete All
@@ -297,7 +288,7 @@ export default function Home() {
                         </div>
                     </div>
 
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card">
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card min-h-96">
                         <DropZone
                             items={droppedItems}
                             onRestore={handleRestoreItem}
@@ -314,7 +305,6 @@ export default function Home() {
                 </div>
             </div>
 
-            {/* Edit Item Dialog */}
             {selectedItem && (
                 <EditItemDialog
                     item={selectedItem}
