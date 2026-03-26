@@ -61,7 +61,7 @@ router.put("/", async (req, res) => {
     try {
         const [result] = await pool.query(
             "INSERT INTO travel_items (name, weight, preset_id, quantity, dropped, order_index) VALUES (?, ?, ?, ?, ?, ?)",
-            [name, weight, preset_id, quantity ?? 0, dropped ? 1 : 0, order_index ?? 0]
+            [name, weight, preset_id, quantity ?? 1, dropped ? 1 : 0, order_index ?? 0]
         );
         res.status(201).json({ message: "Item inserted", id: result.insertId });
     } catch (err) {
@@ -81,7 +81,7 @@ router.put("/batch", async (req, res) => {
             item.name,
             item.weight,
             item.preset_id,
-            item.quantity ?? 0,
+            item.quantity ?? 1,
             item.dropped ? 1 : 0,
             item.order_index ?? 0,
         ]);

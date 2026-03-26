@@ -62,7 +62,7 @@ export function PresetManager({
                         name: item.name,
                         weight: Number(item.weight),
                         preset_id: newPreset.id,
-                        quantity: item.quantity ?? 0,
+                        quantity: item.quantity ?? 1,
                         dropped: Boolean(item.dropped),
                         order_index: item.orderIndex ?? 0,
                     }))

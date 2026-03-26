@@ -171,7 +171,7 @@ export function useItems(presetId: number | null) {
                             name: item.name,
                             weight: Number(item.weight),
                             preset_id: presetId,
-                            quantity: item.quantity ?? 0,
+                            quantity: item.quantity ?? 1,
                             dropped: Boolean(item.dropped),
                             order_index: item.orderIndex ?? 0,
                         }))

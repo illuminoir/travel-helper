@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS travel_items (
                                             name VARCHAR(255),
     weight DECIMAL(20, 3) DEFAULT 0,
     dropped BOOLEAN DEFAULT FALSE,
-    quantity INT DEFAULT 0,
+    quantity INT DEFAULT 1,
     order_index INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
