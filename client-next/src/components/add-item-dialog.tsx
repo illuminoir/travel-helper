@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { TravelItem } from '@/types';
-import { useWeightUnit } from '@/contexts/weight-unit-context';
 import { toGrams } from '@/lib/weight';
 
 interface AddItemDialogProps {
@@ -28,7 +27,6 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
     const [weight, setWeight] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showDuplicateWarning, setShowDuplicateWarning] = useState(false);
-    const { weightUnit } = useWeightUnit();
 
     const confirmRef = useRef<HTMLButtonElement>(null);
 
@@ -132,7 +130,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                     <DialogHeader>
                         <DialogTitle>Duplicate Item</DialogTitle>
                         <DialogDescription>
-                            An item named <strong>"{formatName(name)}"</strong> already exists in this preset. Are you sure you want to add another one?
+                            An item named <strong>&#34;{formatName(name)}&#34;</strong> already exists in this preset. Are you sure you want to add another one?
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end gap-2 pt-4">

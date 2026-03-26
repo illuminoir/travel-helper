@@ -32,7 +32,7 @@ export function ItemCard({
                              draggable = false,
                              isDropped = false,
                          }: ItemCardProps) {
-    const {weightUnit} = useWeightUnit();
+    const { weightUnit } = useWeightUnit();
     const [quantity, setQuantity] = useState<number | string>(item.quantity ?? 1);
 
     useEffect(() => {

@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import './globals.css';
 
 import { WeightUnitProvider } from '@/contexts/weight-unit-context';
-import { AuthProvider } from "@/contexts/auth-context";
+import { AuthProvider } from '@/contexts/auth-context';
 
 export const metadata: Metadata = {
   title: 'Create Next App',

@@ -1,4 +1,4 @@
-import { Airline } from "@/types";
+import { Airline } from '@/types';
 
 export const AIRLINES: Airline[] = [
     {
