@@ -19,6 +19,7 @@ interface DropZoneProps {
     onDropNewItem: (item: TravelItem, index: number) => void;
     sort: SortState;
     onSort: (sort: SortState) => void;
+    onTagClick?: (tag: string) => void;
 }
 
 export function DropZone({
@@ -32,6 +33,7 @@ export function DropZone({
                              onDropNewItem,
                              sort,
                              onSort,
+                             onTagClick,
                          }: DropZoneProps) {
     const [search, setSearch] = useState('');
     const [insertIndex, setInsertIndex] = useState<number | null>(null);
@@ -173,6 +175,7 @@ export function DropZone({
                                 draggable={false}
                                 isDropped={true}
                                 onQuantityChange={onQuantityChange}
+                                onTagClick={onTagClick}
                             />
                         </div>
                     ))}

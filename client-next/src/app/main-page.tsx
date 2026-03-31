@@ -35,6 +35,7 @@ export default function Home() {
         items, droppedItems, loading, error, setError, deleteItem, addItem,
         moveItem, clearDropped, refetchItems, updateWeight,
         canUndo, undo, deleteAll, dropAll, updateQuantity, reorderDropped, sortDropped,
+        clearUndoStack,
     } = useItems(activePresetId);
 
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
@@ -112,6 +113,7 @@ export default function Home() {
             const data = parseCSV(text);
             await importFromCSV(data, activePresetId);
             await refetchItems();
+            clearUndoStack();
         } catch (err) {
             setImportError(err instanceof Error ? err.message : 'Import failed');
         } finally {
@@ -300,6 +302,7 @@ export default function Home() {
                             onDropNewItem={(item, index) => moveItem(item, true, index)}
                             sort={droppedSort}
                             onSort={handleDroppedSort}
+                            onTagClick={handleTagClick}
                         />
                     </div>
                 </div>

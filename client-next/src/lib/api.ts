@@ -110,23 +110,17 @@ export const tagMappingApi = {
 // --- CSV Export ---
 
 export function exportToCSV(items: TravelItem[]): void {
-    const allTags = new Map<number, string>();
-    items.forEach(item => {
-        item.tags?.forEach(tag => allTags.set(tag.id, tag.name));
-    });
+    const lines: string[] = [];
 
-    const tagsLines = ['## TAGS', 'id,name'];
-    allTags.forEach((name, id) => {
-        tagsLines.push(`${id},"${name.replace(/"/g, '""')}"`);
-    });
+    for (const item of items) {
+        const primaryTag = item.tags?.[0]?.name ?? '';
+        const secondaryTag = item.tags?.[1]?.name ?? '';
+        const quantity = item.quantity ?? 0;
+        const name = item.name.replace(/"/g, '""');
+        lines.push(`${primaryTag},"${name}",${quantity},,,${secondaryTag},`);
+    }
 
-    const itemsLines = ['## ITEMS', 'id,name,weight,tag_ids'];
-    items.forEach(item => {
-        const tagIds = (item.tags || []).map(t => t.id).join(';');
-        itemsLines.push(`${item.id},"${item.name.replace(/"/g, '""')}",${item.weight},"${tagIds}"`);
-    });
-
-    const csv = [...tagsLines, '', ...itemsLines].join('\n');
+    const csv = lines.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

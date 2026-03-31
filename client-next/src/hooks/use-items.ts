@@ -233,6 +233,11 @@ export function useItems(presetId: number | null) {
         await Promise.all(sorted.map((item, index) => itemsApi.updateOrder(item.id, index)));
     }, [droppedItems]);
 
+    const clearUndoStack = useCallback(() => {
+        undoStack.current = [];
+        setCanUndo(false);
+    }, []);
+
     return {
         items,
         droppedItems,
@@ -251,6 +256,7 @@ export function useItems(presetId: number | null) {
         updateQuantity,
         reorderDropped,
         sortDropped,
+        clearUndoStack,
         refetchItems: fetchItems,
     };
 }
