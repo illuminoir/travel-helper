@@ -152,7 +152,7 @@ export function parseCSV(csvText: string): ImportData {
     let nextTagId = 1;
     let nextItemId = 1;
 
-    const getOrCreateTag = (name: string): number => {
+    const getOrCreateTag = (name: string | undefined): number => {
         const normalized = name.trim();
         if (!normalized) return -1;
         if (tagNameToId.has(normalized)) return tagNameToId.get(normalized)!;
@@ -162,31 +162,30 @@ export function parseCSV(csvText: string): ImportData {
         return id;
     };
 
+    // WARNING
+    // This parsing code is designed for Baby's very specific google sheets format
     for (const line of lines) {
         const cols = parseCSVLine(line);
-        const primaryTag = cols[0]?.trim();
-        const itemName = cols[1]?.trim();
-        const secondaryTag = cols[5]?.trim();
+        const firstTag = cols[0]?.trim();
+        const name = cols[1]?.trim();
+        const weight = 0;
+        const quantity = Math.max(1, parseInt(cols[2]?.trim()) || 1);
+        const itemTags = [firstTag, ...cols.slice(5)];
 
-        if (!itemName) continue; // skip rows with no item name
+        if (!name) continue; // skip rows with no item name
 
         const tagIds: number[] = [];
 
-        if (primaryTag) {
-            const id = getOrCreateTag(primaryTag);
+        itemTags.forEach(tag => {
+            const id = getOrCreateTag(tag);
             if (id !== -1) tagIds.push(id);
-        }
-        if (secondaryTag) {
-            const id = getOrCreateTag(secondaryTag);
-            if (id !== -1) tagIds.push(id);
-        }
+        })
 
-        const quantity = Math.max(1, parseInt(cols[2]?.trim()) || 1);
 
         items.push({
             id: nextItemId++,
-            name: itemName,
-            weight: 0,
+            name,
+            weight,
             quantity,
             tagIds,
         });
@@ -198,14 +197,10 @@ export function parseCSV(csvText: string): ImportData {
 function parseCSVLine(line: string): string[] {
     const result: string[] = [];
     let current = '';
-    let inQuotes = false;
 
     for (let i = 0; i < line.length; i++) {
         const ch = line[i];
-        if (ch === '"') {
-            if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
-            else { inQuotes = !inQuotes; }
-        } else if (ch === ',' && !inQuotes) {
+        if (ch === ',') {
             result.push(current);
             current = '';
         } else {
@@ -234,8 +229,6 @@ export async function importFromCSV(data: ImportData, presetId: number): Promise
             weight: item.weight,
             preset_id: presetId,
             quantity: item.quantity ?? 0,
-            dropped: false,
-            order_index: 0,
         }))
     );
 
