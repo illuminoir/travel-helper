@@ -113,11 +113,11 @@ export function exportToCSV(items: TravelItem[]): void {
     const lines: string[] = [];
 
     for (const item of items) {
-        const primaryTag = item.tags?.[0]?.name ?? '';
-        const secondaryTag = item.tags?.[1]?.name ?? '';
-        const quantity = item.quantity ?? 0;
         const name = item.name.replace(/"/g, '""');
-        lines.push(`${primaryTag},"${name}",${quantity},,,${secondaryTag},`);
+        const quantity = item.quantity ?? 1;
+        const weight = item.weight ?? 0;
+        const itemTags = item.tags;
+        lines.push(`${name},${weight},${quantity},${itemTags.map(tag => tag.name + ",")}`);
     }
 
     const csv = lines.join('\n');
