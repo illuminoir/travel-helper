@@ -116,8 +116,10 @@ export function exportToCSV(items: TravelItem[]): void {
         const name = item.name.replace(/"/g, '""');
         const quantity = item.quantity ?? 1;
         const weight = item.weight ?? 0;
+        const isDropped = item.dropped;
+        const orderIndex = item.orderIndex;
         const itemTags = item.tags;
-        lines.push(`${name},${weight},${quantity},${itemTags.map(tag => tag.name + ",")}`);
+        lines.push(`${name},${weight},${quantity},${isDropped},${orderIndex},${itemTags.map(tag => tag.name + ",")}`);
     }
 
     const csv = lines.join('\n');
