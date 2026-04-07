@@ -161,7 +161,7 @@ export function PresetManager({
                     disabled={items.length === 0 && droppedItems.length === 0}
                     title="Save current items as a new preset"
                 >
-                    <Copy className="h-4 w-4 mr-2" /> Save as new preset
+                    <Copy className="h-4 w-4 mr-2" /> Save preset
                 </Button>
             </div>
 

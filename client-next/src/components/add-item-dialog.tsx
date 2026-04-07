@@ -41,10 +41,12 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
     const isDuplicate = (rawName: string) =>
         items.some(item => item.name.toLowerCase() === rawName.trim().toLowerCase());
 
+    const getRoundedWeight = () =>
+        parseFloat(parseFloat(weight).toFixed(3)) || 0;
+
     const doAdd = async () => {
         try {
-            console.log(weight);
-            await onAdd(formatName(name), toGrams(parseFloat(weight) || 0, 'kg'));
+            await onAdd(formatName(name), toGrams(getRoundedWeight(), 'kg'));
             setName('');
             setWeight('');
             setOpen(false);
@@ -64,7 +66,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
             return;
         }
 
-        const weightNum = parseFloat(weight) || 0;
+        const weightNum = getRoundedWeight();
 
         if (weightNum < 0) {
             setError('Weight must be a positive number');
@@ -107,9 +109,15 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
                             <Input
                                 type="number"
                                 min="0"
-                                step="0.1"
+                                step="0.001"
                                 value={weight}
                                 onChange={(e) => setWeight(e.target.value)}
+                                onBlur={(e) => {
+                                    const rounded = parseFloat(e.target.value);
+                                    if (!isNaN(rounded)) {
+                                        setWeight(String(parseFloat(rounded.toFixed(3))));
+                                    }
+                                }}
                                 placeholder="0"
                                 disabled={isLoading}
                             />
