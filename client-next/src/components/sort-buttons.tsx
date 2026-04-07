@@ -21,8 +21,8 @@ export function SortButtons({ sort, onChange }: SortButtonsProps) {
     };
 
     const arrow = (field: SortField) => {
-        if (sort.field !== field) return null;
-        return sort.direction === 'asc' ? ' ↑' : ' ↓';
+        if (sort.field !== field) return ' ↓'; //default to ascending sort
+        return sort.direction === 'asc' ? ' ↓' : ' ↑';
     };
 
     return (
