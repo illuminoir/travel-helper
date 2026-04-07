@@ -211,9 +211,11 @@ function parseCSVLine(line: string): string[] {
     return result;
 }
 
-export async function importFromCSV(data: ImportData, presetId: number): Promise<void> {
-    await itemsApi.deleteAll(presetId);
-    await tagsApi.deleteAll();
+export async function importFromCSV(data: ImportData, presetId: number, clearData: boolean): Promise<void> {
+    if (clearData) {
+        await itemsApi.deleteAll(presetId);
+        await tagsApi.deleteAll();
+    }
 
     const tagIdMap = new Map<number, number>();
     for (const tag of data.tags) {

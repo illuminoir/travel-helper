@@ -48,7 +48,7 @@ export default function Home() {
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
     const [droppedSort, setDroppedSort] = useState<SortState>({ field: 'name', direction: 'asc' });
-
+    const [shouldReplaceOnImport, setShouldReplaceOnImport] = useState(false);
     useEffect(() => {
         if (!authLoading && !user) router.push('/login');
     }, [user, authLoading, router]);
@@ -111,7 +111,7 @@ export default function Home() {
         try {
             const text = await file.text();
             const data = parseCSV(text);
-            await importFromCSV(data, activePresetId);
+            await importFromCSV(data, activePresetId, shouldReplaceOnImport);
             await refetchItems();
             clearUndoStack();
         } catch (err) {
@@ -161,15 +161,6 @@ export default function Home() {
 
                         {/* Export / Import / User */}
                         <div className="flex flex-wrap gap-2 items-center justify-end">
-                            <Button variant="outline" size="sm" onClick={handleExport} className="cursor-pointer">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                                    <polyline points="17 8 12 3 7 8" />
-                                    <line x1="12" y1="3" x2="12" y2="15" />
-                                </svg>
-                                <span className="hidden sm:inline">Export CSV</span>
-                                <span className="sm:hidden">Export</span>
-                            </Button>
                             <Button variant="outline" size="sm" onClick={handleImportClick} disabled={isImporting} className="cursor-pointer">
                                 {isImporting ? (
                                     <>
@@ -189,6 +180,15 @@ export default function Home() {
                                         <span className="sm:hidden">Import</span>
                                     </>
                                 )}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleExport} className="cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="17 8 12 3 7 8" />
+                                    <line x1="12" y1="3" x2="12" y2="15" />
+                                </svg>
+                                <span className="hidden sm:inline">Export CSV</span>
+                                <span className="sm:hidden">Export</span>
                             </Button>
                             <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
                             <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
@@ -340,7 +340,22 @@ export default function Home() {
                     </DialogHeader>
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
-                        <Button variant="destructive" onClick={handleImportConfirm}>Yes, replace everything</Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                setShouldReplaceOnImport(false);
+                                handleImportConfirm();
+                            }}>
+                            Add to existing data
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={() => {
+                                setShouldReplaceOnImport(true);
+                                handleImportConfirm();
+                            }}>
+                            Replace everything
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
