@@ -341,7 +341,7 @@ export default function Home() {
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
                         <Button
-                            variant="destructive"
+                            variant="default"
                             onClick={() => {
                                 setShouldReplaceOnImport(false);
                                 handleImportConfirm();
@@ -349,7 +349,7 @@ export default function Home() {
                             Add to existing data
                         </Button>
                         <Button
-                            variant="destructive"
+                            variant="default"
                             onClick={() => {
                                 setShouldReplaceOnImport(true);
                                 handleImportConfirm();
