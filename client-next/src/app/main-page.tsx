@@ -7,7 +7,6 @@ import { usePresets } from '@/hooks/use-presets';
 import { useAuth } from '@/contexts/auth-context';
 import { ItemsPanel } from '@/components/items-panel';
 import { EditItemDialog } from '@/components/edit-item-dialog';
-import { TagFilter } from '@/components/tag-filter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AddItemDialog } from '@/components/add-item-dialog';
@@ -40,7 +39,6 @@ export default function Home() {
 
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
     const [isEditItemOpen, setIsEditItemOpen] = useState(false);
-    const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [showImportWarning, setShowImportWarning] = useState(false);
@@ -84,16 +82,6 @@ export default function Home() {
     };
 
     const handleDoubleClickDropped = (item: TravelItem) => moveItem(item, null);
-
-    const filteredItems = selectedTags.length === 0
-        ? items
-        : items.filter((item) =>
-            selectedTags.every((tag) => Array.isArray(item.tags) && item.tags.map((t) => t.name).includes(tag))
-        );
-
-    const handleTagClick = (tag: string) => {
-        setc((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
-    };
 
     const handleExport = () => exportToCSV([...items, ...bagItems]);
 
@@ -274,9 +262,9 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
                         <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...bagItems]} />
-                        <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
+                        {/*<Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Filters
-                        </Button>
+                        </Button> */}
                         <Button variant="outline" size="icon" onClick={handleUndo} disabled={!canUndo}>
                             <Undo2 className="w-4 h-4" />
                         </Button>
@@ -317,16 +305,14 @@ export default function Home() {
                         <ItemsPanel
                             title="Available Items"
                             bagIndex={null}
-                            items={[...filteredItems].sort(toCompareFn(availableSort))}
+                            items={[...items].sort(toCompareFn(availableSort))}
                             sort={availableSort}
                             onSort={setAvailableSort}
                             onDelete={(id) => deleteItem(id)}
                             onDragStart={handleDragStart}
                             onRightClick={handleRightClick}
-                            onTagClick={handleTagClick}
                             onDoubleClick={handleDoubleClick}
                             onQuantityChange={(item, qty) => updateQuantity(item, qty)}
-                            tagFilter={<TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />}
                             headerActions={
                                 <>
                                     <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
@@ -371,7 +357,6 @@ export default function Home() {
                                             onSort={(sort) => handleBagSort(bagIndex, sort)}
                                             onDelete={(id) => deleteItem(id)}
                                             onRightClick={handleRightClick}
-                                            onTagClick={handleTagClick}
                                             onDoubleClick={handleDoubleClickDropped}
                                             onQuantityChange={(item, qty) => updateQuantity(item, qty)}
                                             onReorder={(reordered) => reorderBag(bagIndex, reordered)}

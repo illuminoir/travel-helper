@@ -9,6 +9,7 @@ import { Search } from 'lucide-react';
 import { SortButtons, SortState } from '@/components/sort-buttons';
 import { smartWeight } from '@/lib/weight';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
+import { TagFilter } from "@/components/tag-filter";
 
 interface ItemsPanelProps {
     title: string;
@@ -19,7 +20,6 @@ interface ItemsPanelProps {
     onDragStart?: (e: React.DragEvent, item: TravelItem) => void;
     onDoubleClick?: (item: TravelItem) => void;
     onRightClick?: (item: TravelItem, e: React.MouseEvent) => void;
-    onTagClick?: (tag: string) => void;
     onQuantityChange?: (item: TravelItem, quantity: number) => void;
     onReorder?: (reordered: TravelItem[]) => void;
     onDropNewItem?: (item: TravelItem, index: number) => void;
@@ -39,7 +39,6 @@ export function ItemsPanel({
                                onDragStart,
                                onDoubleClick,
                                onRightClick,
-                               onTagClick,
                                onQuantityChange,
                                onReorder,
                                onDropNewItem,
@@ -47,21 +46,27 @@ export function ItemsPanel({
                                sort,
                                onSort,
                                headerActions,
-                               tagFilter,
                            }: ItemsPanelProps) {
     const { weightUnit } = useWeightUnit();
     const [search, setSearch] = useState('');
     const [insertIndex, setInsertIndex] = useState<number | null>(null);
     const [isDragOverZone, setIsDragOverZone] = useState(false);
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const dragItemIndex = useRef<number | null>(null);
     const dragCounter = useRef(0);
     const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     const isBagPanel = bagIndex !== null;
 
+    const filteredItems = selectedTags.length === 0
+        ? items
+        : items.filter((item) =>
+            selectedTags.every((tag) => Array.isArray(item.tags) && item.tags.map((t) => t.name).includes(tag))
+        );
+
     const filtered = search.trim()
-        ? items.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
-        : items;
+        ? filteredItems.filter(item => item.name.toLowerCase().includes(search.toLowerCase()))
+        : filteredItems;
 
     const totalGrams = items.reduce((sum, item) => sum + Number(item.weight) * (item.quantity ?? 1), 0);
     const isOverLimit = weightLimitGrams !== undefined && weightLimitGrams > 0 && totalGrams > weightLimitGrams;
@@ -138,6 +143,10 @@ export function ItemsPanel({
         dragItemIndex.current = null;
     };
 
+    const handleTagClick = (tag: string) => {
+        setSelectedTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+    };
+
     return (
         <div
             className={`flex flex-col gap-3 flex-1 min-h-0 rounded-lg transition-colors ${
@@ -177,7 +186,7 @@ export function ItemsPanel({
                 </div>
             </div>
 
-            {tagFilter}
+            <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
 
             <div className="relative flex-shrink-0">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
@@ -218,7 +227,7 @@ export function ItemsPanel({
                                 onDragStart={!isBagPanel && onDragStart ? (e) => onDragStart(e, item) : undefined}
                                 onRightClick={onRightClick}
                                 onDoubleClick={onDoubleClick}
-                                onTagClick={onTagClick}
+                                onTagClick={handleTagClick}
                                 draggable={!isBagPanel}
                                 isDropped={isBagPanel}
                                 onQuantityChange={onQuantityChange}
