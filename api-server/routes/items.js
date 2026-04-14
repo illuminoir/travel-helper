@@ -4,8 +4,8 @@ import pool from "../db.js";
 const router = express.Router();
 
 router.get("/", async (req, res) => {
-    const { preset_id } = req.query;
-    if (!preset_id) return res.status(400).json({ error: "Missing preset_id" });
+    const { presetId } = req.query;
+    if (!presetId) return res.status(400).json({ error: "Missing presetId" });
 
     try {
         const [rows] = await pool.query(`
@@ -18,9 +18,9 @@ router.get("/", async (req, res) => {
                      LEFT JOIN tags t ON tm.tag_id = t.id
             WHERE ti.preset_id = ?
             ORDER BY
-                CASE WHEN ti.dropped = 0 THEN ti.name END ASC,
-                CASE WHEN ti.dropped = 1 THEN ti.order_index END ASC
-        `, [preset_id]);
+                CASE WHEN ti.bag_index IS NULL THEN ti.name END ASC,
+                CASE WHEN ti.bag_index IS NOT NULL THEN ti.order_index END ASC
+        `, [presetId]);
 
         const itemMap = new Map();
         for (const row of rows) {
@@ -29,10 +29,10 @@ router.get("/", async (req, res) => {
                     id: row.id,
                     name: row.name,
                     weight: row.weight,
-                    dropped: row.dropped,
+                    bagIndex: row.bag_index,
                     quantity: row.quantity,
-                    order_index: row.order_index,
-                    preset_id: row.preset_id,
+                    orderIndex: row.order_index,
+                    presetId: row.preset_id,
                     created_at: row.created_at,
                     updated_at: row.updated_at,
                     tags: [],
@@ -50,18 +50,17 @@ router.get("/", async (req, res) => {
     }
 });
 
-
 router.put("/", async (req, res) => {
-    const { name, weight, preset_id, quantity, dropped, order_index } = req.body;
+    const { name, weight, presetId, quantity, bagIndex, orderIndex } = req.body;
 
-    if (!name || typeof weight !== "number" || !preset_id) {
-        return res.status(400).json({ error: "Missing or invalid 'name', 'weight', or 'preset_id'" });
+    if (!name || typeof weight !== "number" || !presetId) {
+        return res.status(400).json({ error: "Missing or invalid 'name', 'weight', or 'presetId'" });
     }
 
     try {
         const [result] = await pool.query(
-            "INSERT INTO travel_items (name, weight, preset_id, quantity, dropped, order_index) VALUES (?, ?, ?, ?, ?, ?)",
-            [name, weight, preset_id, quantity ?? 1, dropped ? 1 : 0, order_index ?? 0]
+            "INSERT INTO travel_items (name, weight, preset_id, quantity, bag_index, order_index) VALUES (?, ?, ?, ?, ?, ?)",
+            [name, weight, presetId, quantity ?? 1, bagIndex ?? null, orderIndex ?? 0]
         );
         res.status(201).json({ message: "Item inserted", id: result.insertId });
     } catch (err) {
@@ -80,14 +79,14 @@ router.put("/batch", async (req, res) => {
         const values = items.map(item => [
             item.name,
             item.weight,
-            item.preset_id,
+            item.presetId,
             item.quantity ?? 1,
-            item.dropped ? 1 : 0,
-            item.order_index ?? 0,
+            item.bagIndex ?? null,
+            item.orderIndex ?? 0,
         ]);
 
         const [result] = await pool.query(
-            "INSERT INTO travel_items (name, weight, preset_id, quantity, dropped, order_index) VALUES ?",
+            "INSERT INTO travel_items (name, weight, preset_id, quantity, bag_index, order_index) VALUES ?",
             [values]
         );
 
@@ -103,19 +102,19 @@ router.put("/batch", async (req, res) => {
     }
 });
 
-
 router.put("/:id", async (req, res) => {
     const { id } = req.params;
-    const { weight, dropped, quantity, order_index } = req.body;
+    const { weight, bagIndex, quantity, orderIndex, name } = req.body;
 
     const fields = [];
     const values = [];
 
-    if (typeof weight === "number")  { fields.push("weight = ?");   values.push(weight); }
-    if (typeof dropped === "boolean"){ fields.push("dropped = ?");  values.push(dropped); }
-    if (typeof quantity === "number"){ fields.push("quantity = ?"); values.push(quantity); }
+    if (typeof weight === "number") { fields.push("weight = ?"); values.push(weight); }
+    if (typeof quantity === "number") { fields.push("quantity = ?"); values.push(quantity); }
     if (typeof name === "string" && name.trim()) { fields.push("name = ?"); values.push(name.trim()); }
-    if (typeof order_index === "number") { fields.push("order_index = ?"); values.push(order_index); }
+    if (typeof orderIndex === "number") { fields.push("order_index = ?"); values.push(orderIndex); }
+    // bagIndex can be null (moving back to available) or a number (moving to a bag)
+    if ('bagIndex' in req.body) { fields.push("bag_index = ?"); values.push(bagIndex ?? null); }
 
     if (fields.length === 0) {
         return res.status(400).json({ error: "No valid fields to update" });
@@ -138,7 +137,6 @@ router.put("/:id", async (req, res) => {
     }
 });
 
-
 router.delete("/:id", async (req, res) => {
     try {
         const { id } = req.params;
@@ -149,9 +147,15 @@ router.delete("/:id", async (req, res) => {
         res.status(500).json({ error: "Database error" });
     }
 });
+
 router.delete("/", async (req, res) => {
+    const { presetId } = req.query;
     try {
-        await pool.query("DELETE FROM travel_items");
+        if (presetId) {
+            await pool.query("DELETE FROM travel_items WHERE preset_id = ?", [presetId]);
+        } else {
+            await pool.query("DELETE FROM travel_items");
+        }
         res.json({ success: true, message: "Items deleted." });
     } catch (err) {
         console.error(err);

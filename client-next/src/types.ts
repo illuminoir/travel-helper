@@ -8,8 +8,8 @@ export type TravelItem = {
     name: string
     weight: number
     quantity: number
+    bagIndex: number
     orderIndex: number
-    dropped: boolean
     tags: Tag[]
 }
 
@@ -23,4 +23,10 @@ export type Airline = {
     name: string;
     lastUpdated: string;
     classes: BaggageClass[];
+};
+
+export type SelectedBag = {
+    id: string;
+    airline: Airline;
+    bagClass: BaggageClass;
 };

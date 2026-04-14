@@ -5,24 +5,24 @@ import { useRouter } from 'next/navigation';
 import { useItems } from '@/hooks/use-items';
 import { usePresets } from '@/hooks/use-presets';
 import { useAuth } from '@/contexts/auth-context';
-import { AddItemDialog } from '@/components/add-item-dialog';
-import { ItemsList } from '@/components/items-list';
-import { DropZone } from '@/components/drop-zone';
+import { ItemsPanel } from '@/components/items-panel';
 import { EditItemDialog } from '@/components/edit-item-dialog';
 import { TagFilter } from '@/components/tag-filter';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { TravelItem } from '@/types';
+import { AddItemDialog } from '@/components/add-item-dialog';
+import { SelectedBag, TravelItem } from '@/types';
 import { exportToCSV, importFromCSV, parseCSV } from '@/lib/api';
-import { ChevronDown, LogOut, Trash2, Undo2 } from 'lucide-react';
+import { ChevronDown, LogOut, Trash2, Undo2, User } from 'lucide-react';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useWeightUnit } from '@/contexts/weight-unit-context';
-import { SortButtons, SortState } from '@/components/sort-buttons';
+import { SortState } from '@/components/sort-buttons';
 import { AirlineSelector } from '@/components/airline-selector';
 import { PresetManager } from '@/components/preset-manager';
 
@@ -32,10 +32,10 @@ export default function Home() {
 
     const { presets, activePresetId, setActivePresetId, createPreset, deletePreset, loading: presetsLoading } = usePresets();
     const {
-        items, droppedItems, loading, error, setError, deleteItem, addItem,
-        moveItem, clearDropped, refetchItems, updateWeight,
-        canUndo, undo, deleteAll, dropAll, updateQuantity, reorderDropped, sortDropped,
-        clearUndoStack,
+        items, bagItems, getItemsForBag, loading, error, setError,
+        deleteItem, addItem, moveItem, refetchItems, updateWeight,
+        canUndo, undo, deleteAll, dropAll, updateQuantity,
+        reorderBag, sortBag, clearBag, clearAllBags, clearUndoStack,
     } = useItems(activePresetId);
 
     const [selectedItem, setSelectedItem] = useState<TravelItem | null>(null);
@@ -44,11 +44,17 @@ export default function Home() {
     const [isImporting, setIsImporting] = useState(false);
     const [importError, setImportError] = useState<string | null>(null);
     const [showImportWarning, setShowImportWarning] = useState(false);
+    const [shouldReplaceOnImport, setShouldReplaceOnImport] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
-    const [droppedSort, setDroppedSort] = useState<SortState>({ field: 'name', direction: 'asc' });
-    const [shouldReplaceOnImport, setShouldReplaceOnImport] = useState(false);
+    const [bagSorts, setBagSorts] = useState<Record<number, SortState>>({});
+    const [selectedBags, setSelectedBags] = useState<SelectedBag[]>([]);
+    const [activeBagIndex, setActiveBagIndex] = useState<number | null>(null);
+
+    // Last added bag index for double-click drop target
+    const lastBagIndex = selectedBags.length > 0 ? selectedBags.length - 1 : 0;
+
     useEffect(() => {
         if (!authLoading && !user) router.push('/login');
     }, [user, authLoading, router]);
@@ -66,19 +72,18 @@ export default function Home() {
         e.dataTransfer.setData('application/json', JSON.stringify(item));
     };
 
-    const handleRestoreItem = (id: number) => {
-        const itemToRestore = droppedItems.find((item) => item.id === id);
-        if (itemToRestore) moveItem(itemToRestore, false);
-    };
-
     const handleRightClick = (item: TravelItem, e?: React.MouseEvent) => {
         if (e) e.preventDefault();
         setSelectedItem(item);
         setIsEditItemOpen(true);
     };
 
-    const handleDoubleClick = (item: TravelItem) => moveItem(item, true, 0);
-    const handleDoubleClickDropped = (item: TravelItem) => moveItem(item, false);
+    const handleDoubleClick = (item: TravelItem) => {
+        if (activeBagIndex === null) return;
+        moveItem(item, activeBagIndex, 0);
+    };
+
+    const handleDoubleClickDropped = (item: TravelItem) => moveItem(item, null);
 
     const filteredItems = selectedTags.length === 0
         ? items
@@ -87,10 +92,10 @@ export default function Home() {
         );
 
     const handleTagClick = (tag: string) => {
-        setSelectedTags((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
+        setc((prev) => prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]);
     };
 
-    const handleExport = () => exportToCSV([...items, ...droppedItems]);
+    const handleExport = () => exportToCSV([...items, ...bagItems]);
 
     const handleImportClick = () => {
         setImportError(null);
@@ -121,14 +126,14 @@ export default function Home() {
         }
     };
 
-    const handleDroppedSort = (sort: SortState) => {
-        setDroppedSort(sort);
-        sortDropped(toCompareFn(sort));
+    const handleBagSort = (bagIndex: number, sort: SortState) => {
+        setBagSorts(prev => ({ ...prev, [bagIndex]: sort }));
+        sortBag(bagIndex, toCompareFn(sort));
     };
 
     const handleUndo = async () => {
         setAvailableSort({ field: 'name', direction: 'asc' });
-        setDroppedSort({ field: 'name', direction: 'asc' });
+        setBagSorts({});
         await undo();
     };
 
@@ -136,6 +141,18 @@ export default function Home() {
         await logout();
         router.push('/login');
     };
+
+    useEffect(() => {
+        const handleKeyDown = async (e: KeyboardEvent) => {
+            const isMac = navigator.platform.toUpperCase().includes('MAC');
+            if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (canUndo) await handleUndo();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [canUndo]);
 
     if (authLoading || presetsLoading || loading) {
         return (
@@ -145,9 +162,24 @@ export default function Home() {
         );
     }
 
-    if (!user) return null;
+    const handleBagsChange = async (bags: SelectedBag[]) => {
+        // Find removed bags
+        const removedIndices = selectedBags
+            .map((_, i) => i)
+            .filter(i => !bags.some((_, newI) => newI === i));
 
-    const totalGrams = droppedItems.reduce((sum, current) => sum + Number(current.weight) * (current.quantity ?? 1), 0);
+        // Move items from removed bags back to available
+        for (const bagIndex of removedIndices) {
+            const itemsInBag = getItemsForBag(bagIndex);
+            await Promise.all(itemsInBag.map(item => moveItem(item, null)));
+        }
+
+        setSelectedBags(bags);
+        if (bags.length > 0) setActiveBagIndex(bags.length - 1);
+        else setActiveBagIndex(null);
+    };
+
+    if (!user) return null;
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-background to-muted p-4 sm:p-6">
@@ -155,11 +187,8 @@ export default function Home() {
 
                 {/* Header */}
                 <div className="flex flex-col gap-3">
-                    {/* Top row: title + actions */}
                     <div className="flex items-start justify-between gap-3">
                         <h1 className="text-2xl sm:text-3xl font-bold">Travel helper</h1>
-
-                        {/* Export / Import / User */}
                         <div className="flex flex-wrap gap-2 items-center justify-end">
                             <Button variant="outline" size="sm" onClick={handleImportClick} disabled={isImporting} className="cursor-pointer">
                                 {isImporting ? (
@@ -191,14 +220,29 @@ export default function Home() {
                                 <span className="sm:hidden">Export</span>
                             </Button>
                             <input ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFileChange} />
-                            <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
-                            <Button variant="outline" size="icon" onClick={handleLogout} title="Sign out" className="cursor-pointer h-8 w-8">
-                                <LogOut className="h-4 w-4" />
-                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="cursor-pointer h-8 w-8">
+                                        <User className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                        {user.email}
+                                    </div>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={handleLogout}
+                                        className="text-destructive focus:text-destructive cursor-pointer"
+                                    >
+                                        <LogOut className="h-4 w-4 mr-2" />
+                                        Log out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </div>
 
-                    {/* Preset manager */}
                     <PresetManager
                         presets={presets}
                         activePresetId={activePresetId}
@@ -206,7 +250,7 @@ export default function Home() {
                         createPreset={createPreset}
                         deletePreset={deletePreset}
                         items={items}
-                        droppedItems={droppedItems}
+                        droppedItems={bagItems}
                         onError={(msg) => setError(msg)}
                         refetchItems={refetchItems}
                     />
@@ -226,10 +270,10 @@ export default function Home() {
                     </div>
                 )}
 
-                {/* Toolbar row */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Toolbar */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...droppedItems]} />
+                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...bagItems]} />
                         <Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Filters
                         </Button>
@@ -237,8 +281,12 @@ export default function Home() {
                             <Undo2 className="w-4 h-4" />
                         </Button>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <AirlineSelector totalGrams={totalGrams} weightUnit={weightUnit} />
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <AirlineSelector
+                            weightUnit={weightUnit}
+                            onBagsChange={handleBagsChange}
+                            getItemsForBag={getItemsForBag}
+                        />
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="sm" className="flex items-center gap-1 w-16">
@@ -262,48 +310,78 @@ export default function Home() {
                 </div>
 
                 {/* Main panels */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:h-[calc(100vh-16rem)]">
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card h-[60vh] lg:h-auto">
-                        <div className="flex items-center justify-between flex-shrink-0 mb-3 flex-wrap gap-2">
-                            <h2 className="font-semibold text-lg">Available Items ({items.length})</h2>
-                            <div className="flex gap-2 items-center flex-wrap">
-                                <SortButtons sort={availableSort} onChange={setAvailableSort} />
-                                <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
-                                    <Trash2 className="w-3 h-3 mr-1" /> Delete All
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => dropAll(items)} disabled={items.length === 0}>
-                                    Drop All
-                                </Button>
-                            </div>
-                        </div>
-                        <TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />
-                        <div className="flex-1 min-h-0 overflow-y-auto mt-2">
-                            <ItemsList
-                                items={[...filteredItems].sort(toCompareFn(availableSort))}
-                                onDelete={(id) => deleteItem(id, false)}
-                                onDragStart={handleDragStart}
-                                onRightClick={handleRightClick}
-                                onTagClick={handleTagClick}
-                                onDoubleClick={handleDoubleClick}
-                                onQuantityChange={(item, qty) => updateQuantity(item, qty)}
-                            />
-                        </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    {/* Available items */}
+                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card h-[60vh] lg:h-[calc(100vh-20rem)]">
+                        <ItemsPanel
+                            title="Available Items"
+                            bagIndex={null}
+                            items={[...filteredItems].sort(toCompareFn(availableSort))}
+                            sort={availableSort}
+                            onSort={setAvailableSort}
+                            onDelete={(id) => deleteItem(id)}
+                            onDragStart={handleDragStart}
+                            onRightClick={handleRightClick}
+                            onTagClick={handleTagClick}
+                            onDoubleClick={handleDoubleClick}
+                            onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+                            tagFilter={<TagFilter selectedTags={selectedTags} onTagRemove={handleTagClick} />}
+                            headerActions={
+                                <>
+                                    <Button variant="outline" size="sm" onClick={async () => await deleteAll(items)} disabled={items.length === 0}>
+                                        <Trash2 className="w-3 h-3 mr-1" /> Delete All
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => dropAll(items, 0)} disabled={items.length === 0 || selectedBags.length === 0}>
+                                        Drop All
+                                    </Button>
+                                </>
+                            }
+                        />
                     </div>
 
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card min-h-96">
-                        <DropZone
-                            items={droppedItems}
-                            onRestore={handleRestoreItem}
-                            onClearAll={clearDropped}
-                            onRightClick={handleRightClick}
-                            onDoubleClick={handleDoubleClickDropped}
-                            onQuantityChange={(item, qty) => updateQuantity(item, qty)}
-                            onReorder={reorderDropped}
-                            onDropNewItem={(item, index) => moveItem(item, true, index)}
-                            sort={droppedSort}
-                            onSort={handleDroppedSort}
-                            onTagClick={handleTagClick}
-                        />
+                    {/* Bag panels */}
+                    <div className="flex flex-col gap-4 overflow-y-auto h-[60vh] lg:h-[calc(100vh-20rem)]">
+                        {selectedBags.length === 0 ? (
+                            <div className="border-2 border-dashed border-border rounded-lg p-8 flex items-center justify-center text-muted-foreground text-center bg-card h-[60vh] lg:h-[calc(100vh-20rem)]">
+                                <p>Add a bag using the airline selector above to start packing</p>
+                            </div>
+                        ) : (
+                            selectedBags.map((bag, bagIndex) => {
+                                const bagSort = bagSorts[bagIndex] ?? { field: 'name', direction: 'asc' };
+                                const thisBagItems = getItemsForBag(bagIndex);
+                                const sortedBagItems = [...thisBagItems].sort(toCompareFn(bagSort));
+                                const weightLimitGrams = bag.bagClass.weightKg * 1000;
+
+                                return (
+                                    <div
+                                        key={bag.id}
+                                        onClick={() => setActiveBagIndex(bagIndex)}
+                                        className={`border-2 rounded-lg p-4 flex flex-col bg-card flex-shrink-0 cursor-default transition-colors ${
+                                            activeBagIndex === bagIndex ? 'border-primary' : 'border-border'
+                                        }`}
+                                        style={{ height: selectedBags.length === 1 ? '100%' : '400px' }}
+                                    >
+                                        <ItemsPanel
+                                            title={`${bag.airline.name} · ${bag.bagClass.name}`}
+                                            bagIndex={bagIndex}
+                                            items={sortedBagItems}
+                                            weightLimitGrams={weightLimitGrams}
+                                            sort={bagSort}
+                                            onSort={(sort) => handleBagSort(bagIndex, sort)}
+                                            onDelete={(id) => deleteItem(id)}
+                                            onRightClick={handleRightClick}
+                                            onTagClick={handleTagClick}
+                                            onDoubleClick={handleDoubleClickDropped}
+                                            onQuantityChange={(item, qty) => updateQuantity(item, qty)}
+                                            onReorder={(reordered) => reorderBag(bagIndex, reordered)}
+                                            onDropNewItem={(item, index) => moveItem(item, bagIndex, index)}
+                                            onClearAll={() => clearBag(bagIndex)}
+                                        />
+                                    </div>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
             </div>
@@ -311,7 +389,7 @@ export default function Home() {
             {selectedItem && (
                 <EditItemDialog
                     item={selectedItem}
-                    items={[...items, ...droppedItems]}
+                    items={[...items, ...bagItems]}
                     isOpen={isEditItemOpen}
                     onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); }}
                     onSaveWeight={async (item, newWeight) => { await updateWeight(item, newWeight); }}
@@ -333,27 +411,17 @@ export default function Home() {
             <Dialog open={showImportWarning} onOpenChange={setShowImportWarning}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>Replace all data?</DialogTitle>
+                        <DialogTitle>Import CSV</DialogTitle>
                         <DialogDescription>
-                            Importing a CSV will permanently delete <strong>all current items and tags</strong> in this preset and replace them with the contents of the file. This cannot be undone.
+                            How would you like to handle the import?
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="outline" onClick={() => setShowImportWarning(false)}>Cancel</Button>
-                        <Button
-                            variant="default"
-                            onClick={() => {
-                                setShouldReplaceOnImport(false);
-                                handleImportConfirm();
-                            }}>
-                            Add to existing data
+                        <Button variant="outline" onClick={() => { setShouldReplaceOnImport(false); handleImportConfirm(); }}>
+                            Add to existing
                         </Button>
-                        <Button
-                            variant="default"
-                            onClick={() => {
-                                setShouldReplaceOnImport(true);
-                                handleImportConfirm();
-                            }}>
+                        <Button variant="destructive" onClick={() => { setShouldReplaceOnImport(true); handleImportConfirm(); }}>
                             Replace everything
                         </Button>
                     </div>

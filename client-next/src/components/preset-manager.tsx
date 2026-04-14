@@ -61,10 +61,10 @@ export function PresetManager({
                     allItems.map(item => ({
                         name: item.name,
                         weight: Number(item.weight),
-                        preset_id: newPreset.id,
+                        presetId: newPreset.id,
                         quantity: item.quantity ?? 1,
-                        dropped: Boolean(item.dropped),
-                        order_index: item.orderIndex ?? 0,
+                        orderIndex: item.orderIndex ?? 0,
+                        bagIndex: item.bagIndex ?? null,
                     }))
                 );
 
@@ -153,7 +153,6 @@ export function PresetManager({
                     <Trash2 className="h-4 w-4" />
                 </Button>
 
-                {/* Save as new preset */}
                 <Button
                     variant="outline"
                     size="sm"
@@ -172,7 +171,7 @@ export function PresetManager({
             }}>
                 <DialogContent>
                     <DialogHeader>
-                        <DialogTitle>{isCloning ? 'Save as New Preset' : 'New Preset'}</DialogTitle>
+                        <DialogTitle>{isCloning ? 'Save Preset' : 'New Preset'}</DialogTitle>
                         <DialogDescription>
                             {isCloning
                                 ? 'Creates a new preset with a copy of all current items.'

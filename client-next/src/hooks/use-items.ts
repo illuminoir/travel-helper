@@ -8,28 +8,37 @@ const sortItemsByName = (items: TravelItem[]) =>
     [...items].sort((a, b) => a.name.localeCompare(b.name));
 
 type UndoAction =
-    | { type: 'DELETE_ITEM'; item: TravelItem; wasDropped: boolean }
-    | { type: 'MOVE_ITEM'; item: TravelItem; wasDropped: boolean }
-    | { type: 'CLEAR_DROPPED'; items: TravelItem[] }
+    | { type: 'DELETE_ITEM'; item: TravelItem; previousBagIndex: number | null }
+    | { type: 'MOVE_ITEM'; item: TravelItem; previousBagIndex: number | null }
+    | { type: 'CLEAR_BAG'; items: TravelItem[]; bagIndex: number }
+    | { type: 'CLEAR_ALL_BAGS'; items: TravelItem[] }
     | { type: 'DELETE_ALL'; items: TravelItem[] }
     | { type: 'DROP_ALL'; items: TravelItem[] }
     | { type: 'QUANTITY_CHANGE'; item: TravelItem; previousQuantity: number }
-    | { type: 'SORT_DROPPED'; previousOrder: TravelItem[] } ;
+    | { type: 'SORT_BAG'; previousOrder: TravelItem[]; bagIndex: number };
 
 export function useItems(presetId: number | null) {
     const [items, setItems] = useState<TravelItem[]>([]);
-    const [droppedItems, setDroppedItems] = useState<TravelItem[]>([]);
+    const [bagItems, setBagItems] = useState<TravelItem[]>([]); // all dropped items across all bags
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [canUndo, setCanUndo] = useState(false);
+    const [isUndoing, setIsUndoing] = useState(false);
     const undoStack = useRef<UndoAction[]>([]);
 
     const fetchItems = useCallback(async () => {
         if (presetId === null) return;
         try {
             const apiItems = await itemsApi.getAll(presetId);
-            setItems(sortItemsByName(apiItems.filter(item => !item.dropped)));
-            setDroppedItems(apiItems.filter(item => item.dropped).sort((a, b) => a.orderIndex - b.orderIndex));
+            console.log(apiItems);
+            setItems(sortItemsByName(apiItems.filter(item => item.bagIndex === null)));
+            setBagItems(apiItems
+                .filter(item => item.bagIndex !== null)
+                .sort((a, b) => {
+                    if (a.bagIndex !== b.bagIndex) return (a.bagIndex ?? 0) - (b.bagIndex ?? 0);
+                    return a.orderIndex - b.orderIndex;
+                })
+            );
             setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load items');
@@ -38,11 +47,8 @@ export function useItems(presetId: number | null) {
         }
     }, [presetId]);
 
-    useEffect(() => {
-        fetchItems();
-    }, [fetchItems]);
+    useEffect(() => { fetchItems(); }, [fetchItems]);
 
-    // Clear undo stack when preset changes
     useEffect(() => {
         undoStack.current = [];
         setCanUndo(false);
@@ -53,25 +59,28 @@ export function useItems(presetId: number | null) {
         setCanUndo(true);
     };
 
-    const deleteItem = useCallback(async (id: number, isDropped: boolean) => {
-        try {
-            const allItems = isDropped ? droppedItems : items;
-            const item = allItems.find(i => i.id === id);
+    // Get items for a specific bag
+    const getItemsForBag = useCallback((bagIndex: number) => {
+        return bagItems.filter(i => i.bagIndex === bagIndex);
+    }, [bagItems]);
 
+    const deleteItem = useCallback(async (id: number) => {
+        try {
+            const item = [...items, ...bagItems].find(i => i.id === id);
             await itemsApi.delete(id);
             await tagMappingApi.removeAllTagsOnItem(id);
 
-            if (isDropped) {
-                setDroppedItems(prev => prev.filter(i => i.id !== id));
-            } else {
+            if (item?.bagIndex === null || item?.bagIndex === undefined) {
                 setItems(prev => prev.filter(i => i.id !== id));
+            } else {
+                setBagItems(prev => prev.filter(i => i.id !== id));
             }
 
-            if (item) recordAction({ type: 'DELETE_ITEM', item, wasDropped: isDropped });
+            if (item) recordAction({ type: 'DELETE_ITEM', item, previousBagIndex: item.bagIndex ?? null });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to delete item');
         }
-    }, [items, droppedItems]);
+    }, [items, bagItems]);
 
     const addItem = useCallback(async (name: string, weight: number) => {
         if (presetId === null) return;
@@ -85,25 +94,33 @@ export function useItems(presetId: number | null) {
         }
     }, [presetId, fetchItems]);
 
-    const moveItem = useCallback(async (item: TravelItem, toDropped: boolean, orderIndex?: number) => {
-        if (toDropped) {
+    // Move item to a bag (bagIndex) or back to available (null)
+    const moveItem = useCallback(async (item: TravelItem, bagIndex: number | null, orderIndex?: number) => {
+        const previousBagIndex = item.bagIndex ?? null;
+
+        if (bagIndex !== null) {
+            // Moving to a bag
             setItems(prev => sortItemsByName(prev.filter(i => i.id !== item.id)));
-            setDroppedItems(prev => {
+            setBagItems(prev => {
                 if (prev.some(i => i.id === item.id)) return prev;
-                const idx = orderIndex ?? prev.length;
-                const updated = [...prev];
-                updated.splice(idx, 0, { ...item, orderIndex: idx });
-                return updated;
+                const bagSpecificItems = prev.filter(i => i.bagIndex === bagIndex);
+                const idx = orderIndex ?? bagSpecificItems.length;
+                const updated = prev.filter(i => i.bagIndex !== bagIndex);
+                const newBagItems = [...bagSpecificItems];
+                newBagItems.splice(idx, 0, { ...item, bagIndex: bagIndex, orderIndex: idx });
+                return [...updated, ...newBagItems];
             });
         } else {
-            setDroppedItems(prev => prev.filter(i => i.id !== item.id));
-            setItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, item]));
+            // Moving back to available
+            setBagItems(prev => prev.filter(i => i.id !== item.id));
+            setItems(prev => prev.some(i => i.id === item.id) ? prev : sortItemsByName([...prev, { ...item, bagIndex: null }]));
         }
-        await itemsApi.updateDropped(item.id, toDropped);
-        if (toDropped && orderIndex !== undefined) {
+
+        await itemsApi.updateBagIndex(item.id, bagIndex);
+        if (bagIndex !== null && orderIndex !== undefined) {
             await itemsApi.updateOrder(item.id, orderIndex);
         }
-        recordAction({ type: 'MOVE_ITEM', item, wasDropped: !toDropped });
+        recordAction({ type: 'MOVE_ITEM', item, previousBagIndex });
     }, []);
 
     const updateWeight = useCallback(async (item: TravelItem, newWeight: number) => {
@@ -116,12 +133,22 @@ export function useItems(presetId: number | null) {
         }
     }, [fetchItems]);
 
-    const clearDropped = useCallback(async () => {
-        recordAction({ type: 'CLEAR_DROPPED', items: [...droppedItems] });
-        await Promise.all(droppedItems.map(item => itemsApi.updateDropped(item.id, false)));
-        setDroppedItems([]);
+    // Clear all items from a specific bag
+    const clearBag = useCallback(async (bagIndex: number) => {
+        const bagSpecificItems = bagItems.filter(i => i.bagIndex === bagIndex);
+        recordAction({ type: 'CLEAR_BAG', items: [...bagSpecificItems], bagIndex });
+        await Promise.all(bagSpecificItems.map(item => itemsApi.updateBagIndex(item.id, null)));
+        setBagItems(prev => prev.filter(i => i.bagIndex !== bagIndex));
         await fetchItems();
-    }, [droppedItems, fetchItems]);
+    }, [bagItems, fetchItems]);
+
+    // Clear all bags
+    const clearAllBags = useCallback(async () => {
+        recordAction({ type: 'CLEAR_ALL_BAGS', items: [...bagItems] });
+        await Promise.all(bagItems.map(item => itemsApi.updateBagIndex(item.id, null)));
+        setBagItems([]);
+        await fetchItems();
+    }, [bagItems, fetchItems]);
 
     const deleteAll = useCallback(async (itemsToDelete: TravelItem[]) => {
         recordAction({ type: 'DELETE_ALL', items: [...itemsToDelete] });
@@ -132,48 +159,56 @@ export function useItems(presetId: number | null) {
         await fetchItems();
     }, [fetchItems]);
 
-    const dropAll = useCallback(async (itemsToDrop: TravelItem[]) => {
+    const dropAll = useCallback(async (itemsToDrop: TravelItem[], bagIndex: number = 0) => {
         recordAction({ type: 'DROP_ALL', items: [...itemsToDrop] });
-        await Promise.all(itemsToDrop.map(item => itemsApi.updateDropped(item.id, true)));
+        await Promise.all(itemsToDrop.map(item => itemsApi.updateBagIndex(item.id, bagIndex)));
         await fetchItems();
     }, [fetchItems]);
 
     const undo = useCallback(async () => {
         const action = undoStack.current.pop();
         if (!action || presetId === null) return;
-
         setCanUndo(undoStack.current.length > 0);
 
         try {
             switch (action.type) {
                 case 'DELETE_ITEM': {
                     const created = await itemsApi.add(action.item.name, Number(action.item.weight), presetId);
-                    await itemsApi.updateQuantity(created.id, action.item.quantity ?? 1);
+                    await itemsApi.updateQuantity(created.id, action.item.quantity ?? 0);
                     for (const tag of action.item.tags) {
                         await tagMappingApi.createTagMapping(created.id, tag.id);
                     }
-                    if (action.wasDropped) {
-                        await itemsApi.updateDropped(created.id, true);
+                    if (action.previousBagIndex !== null) {
+                        await itemsApi.updateBagIndex(created.id, action.previousBagIndex);
                     }
                     break;
                 }
                 case 'MOVE_ITEM': {
-                    await itemsApi.updateDropped(action.item.id, action.wasDropped);
+                    await itemsApi.updateBagIndex(action.item.id, action.previousBagIndex);
                     break;
                 }
-                case 'CLEAR_DROPPED': {
-                    await Promise.all(action.items.map(item => itemsApi.updateDropped(item.id, true)));
+                case 'CLEAR_BAG': {
+                    await Promise.all(action.items.map(item =>
+                        itemsApi.updateBagIndex(item.id, action.bagIndex)
+                    ));
+                    break;
+                }
+                case 'CLEAR_ALL_BAGS': {
+                    await Promise.all(action.items.map(item =>
+                        itemsApi.updateBagIndex(item.id, item.bagIndex ?? 0)
+                    ));
                     break;
                 }
                 case 'DELETE_ALL': {
+                    setIsUndoing(true);
                     const { insertedIds } = await itemsApi.batchAdd(
                         action.items.map(item => ({
                             name: item.name,
                             weight: Number(item.weight),
-                            preset_id: presetId,
-                            quantity: item.quantity ?? 1,
-                            dropped: Boolean(item.dropped),
-                            order_index: item.orderIndex ?? 0,
+                            presetId: presetId,
+                            quantity: item.quantity ?? 0,
+                            bagIndex: item.bagIndex ?? null,
+                            orderIndex: item.orderIndex ?? 0,
                         }))
                     );
                     await Promise.all(
@@ -181,20 +216,24 @@ export function useItems(presetId: number | null) {
                             item.tags.map(tag => tagMappingApi.createTagMapping(insertedIds[i], tag.id))
                         )
                     );
+                    setIsUndoing(false);
                     break;
                 }
                 case 'DROP_ALL': {
-                    await Promise.all(action.items.map(item => itemsApi.updateDropped(item.id, false)));
+                    await Promise.all(action.items.map(item => itemsApi.updateBagIndex(item.id, null)));
                     break;
                 }
                 case 'QUANTITY_CHANGE': {
                     await itemsApi.updateQuantity(action.item.id, action.previousQuantity);
                     setItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
-                    setDroppedItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
+                    setBagItems(prev => prev.map(i => i.id === action.item.id ? { ...i, quantity: action.previousQuantity } : i));
                     break;
                 }
-                case 'SORT_DROPPED': {
-                    setDroppedItems(action.previousOrder);
+                case 'SORT_BAG': {
+                    setBagItems(prev => {
+                        const otherBags = prev.filter(i => i.bagIndex !== action.bagIndex);
+                        return [...otherBags, ...action.previousOrder];
+                    });
                     await Promise.all(action.previousOrder.map((item, index) =>
                         itemsApi.updateOrder(item.id, index)
                     ));
@@ -204,34 +243,40 @@ export function useItems(presetId: number | null) {
             await fetchItems();
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to undo');
+            setIsUndoing(false);
         }
     }, [presetId, fetchItems]);
 
     const updateQuantity = useCallback(async (item: TravelItem, newQuantity: number) => {
         try {
-            recordAction({ type: 'QUANTITY_CHANGE', item, previousQuantity: item.quantity ?? 1 });
+            recordAction({ type: 'QUANTITY_CHANGE', item, previousQuantity: item.quantity ?? 0 });
             await itemsApi.updateQuantity(item.id, newQuantity);
             setItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
-            setDroppedItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
+            setBagItems(prev => prev.map(i => i.id === item.id ? { ...i, quantity: newQuantity } : i));
             setError(null);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to update quantity');
         }
     }, []);
 
-    const reorderDropped = useCallback(async (reordered: TravelItem[]) => {
-        setDroppedItems(reordered);
-        await Promise.all(reordered.map((item, index) =>
-            itemsApi.updateOrder(item.id, index)
-        ));
+    const reorderBag = useCallback(async (bagIndex: number, reordered: TravelItem[]) => {
+        setBagItems(prev => {
+            const otherBags = prev.filter(i => i.bagIndex !== bagIndex);
+            return [...otherBags, ...reordered];
+        });
+        await Promise.all(reordered.map((item, index) => itemsApi.updateOrder(item.id, index)));
     }, []);
 
-    const sortDropped = useCallback(async (compareFn: (a: TravelItem, b: TravelItem) => number) => {
-        recordAction({ type: 'SORT_DROPPED', previousOrder: [...droppedItems] });
-        const sorted = [...droppedItems].sort(compareFn);
-        setDroppedItems(sorted);
+    const sortBag = useCallback(async (bagIndex: number, compareFn: (a: TravelItem, b: TravelItem) => number) => {
+        const bagSpecificItems = bagItems.filter(i => i.bagIndex === bagIndex);
+        recordAction({ type: 'SORT_BAG', previousOrder: [...bagSpecificItems], bagIndex });
+        const sorted = [...bagSpecificItems].sort(compareFn);
+        setBagItems(prev => {
+            const otherBags = prev.filter(i => i.bagIndex !== bagIndex);
+            return [...otherBags, ...sorted];
+        });
         await Promise.all(sorted.map((item, index) => itemsApi.updateOrder(item.id, index)));
-    }, [droppedItems]);
+    }, [bagItems]);
 
     const clearUndoStack = useCallback(() => {
         undoStack.current = [];
@@ -240,8 +285,10 @@ export function useItems(presetId: number | null) {
 
     return {
         items,
-        droppedItems,
+        bagItems,
+        getItemsForBag,
         loading,
+        isUndoing,
         error,
         setError,
         canUndo,
@@ -249,13 +296,14 @@ export function useItems(presetId: number | null) {
         addItem,
         moveItem,
         updateWeight,
-        clearDropped,
+        clearBag,
+        clearAllBags,
         deleteAll,
         dropAll,
         undo,
         updateQuantity,
-        reorderDropped,
-        sortDropped,
+        reorderBag,
+        sortBag,
         clearUndoStack,
         refetchItems: fetchItems,
     };
