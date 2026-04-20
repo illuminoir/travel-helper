@@ -47,8 +47,23 @@ export default function Home() {
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
     const [bagSorts, setBagSorts] = useState<Record<number, SortState>>({});
-    const [selectedBags, setSelectedBags] = useState<SelectedBag[]>([]);
-    const [activeBagIndex, setActiveBagIndex] = useState<number | null>(null);
+    const [selectedBags, setSelectedBags] = useState<SelectedBag[]>(() => {
+        try {
+            const saved = localStorage.getItem('selectedBags');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
+    const [activeBagIndex, setActiveBagIndex] = useState<number | null>(() => {
+        try {
+            const saved = localStorage.getItem('selectedBags');
+            const bags = saved ? JSON.parse(saved) : [];
+            return bags.length > 0 ? bags.length - 1 : null;
+        } catch {
+            return null;
+        }
+    });
 
     // Last added bag index for double-click drop target
     const lastBagIndex = selectedBags.length > 0 ? selectedBags.length - 1 : 0;
@@ -130,6 +145,8 @@ export default function Home() {
         router.push('/login');
     };
 
+    const storageKey = `selectedBags_${activePresetId}`;
+
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
             const isMac = navigator.platform.toUpperCase().includes('MAC');
@@ -141,6 +158,18 @@ export default function Home() {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [canUndo]);
+
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem(storageKey);
+            const bags = saved ? JSON.parse(saved) : [];
+            setSelectedBags(bags);
+            setActiveBagIndex(bags.length > 0 ? bags.length - 1 : null);
+        } catch {
+            setSelectedBags([]);
+            setActiveBagIndex(null);
+        }
+    }, [storageKey]);
 
     if (authLoading || presetsLoading || loading) {
         return (
@@ -163,6 +192,7 @@ export default function Home() {
         }
 
         setSelectedBags(bags);
+        localStorage.setItem(storageKey, JSON.stringify(bags));
         if (bags.length > 0) setActiveBagIndex(bags.length - 1);
         else setActiveBagIndex(null);
     };
