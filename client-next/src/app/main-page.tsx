@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useItems } from '@/hooks/use-items';
 import { usePresets } from '@/hooks/use-presets';
@@ -47,6 +47,9 @@ export default function Home() {
     const { weightUnit, setWeightUnit } = useWeightUnit();
     const [availableSort, setAvailableSort] = useState<SortState>({ field: 'name', direction: 'asc' });
     const [bagSorts, setBagSorts] = useState<Record<number, SortState>>({});
+    const [focusedPanelIndex, setFocusedPanelIndex] = useState<number>(0);
+    const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
+    const addItemDialogRef = useRef<HTMLButtonElement>(null);
     const [selectedBags, setSelectedBags] = useState<SelectedBag[]>(() => {
         try {
             const saved = localStorage.getItem('selectedBags');
@@ -55,15 +58,7 @@ export default function Home() {
             return [];
         }
     });
-    const [activeBagIndex, setActiveBagIndex] = useState<number | null>(() => {
-        try {
-            const saved = localStorage.getItem('selectedBags');
-            const bags = saved ? JSON.parse(saved) : [];
-            return bags.length > 0 ? bags.length - 1 : null;
-        } catch {
-            return null;
-        }
-    });
+    const activeBagIndex = focusedPanelIndex > 0 ? focusedPanelIndex - 1 : null;
 
     // Last added bag index for double-click drop target
     const lastBagIndex = selectedBags.length > 0 ? selectedBags.length - 1 : 0;
@@ -119,7 +114,7 @@ export default function Home() {
         try {
             const text = await file.text();
             const data = parseCSV(text);
-            await importFromCSV(data, activePresetId, shouldReplaceOnImport);
+            await importFromCSV(data, activePresetId, shouldReplaceOnImport, shouldReplaceOnImport ? [] : [...items, ...bagItems]);
             await refetchItems();
             clearUndoStack();
         } catch (err) {
@@ -145,29 +140,131 @@ export default function Home() {
         router.push('/login');
     };
 
+    const getFocusedPanelItems = useCallback((): TravelItem[] => {
+        if (focusedPanelIndex === 0) {
+            return [...items].sort(toCompareFn(availableSort));
+        }
+        const bagIndex = focusedPanelIndex - 1;
+        const bagSort = bagSorts[bagIndex] ?? { field: 'name', direction: 'asc' };
+        return [...getItemsForBag(bagIndex)].sort(toCompareFn(bagSort));
+    }, [focusedPanelIndex, items, availableSort, bagSorts, getItemsForBag]);
+
     const storageKey = `selectedBags_${activePresetId}`;
 
     useEffect(() => {
         const handleKeyDown = async (e: KeyboardEvent) => {
+            // Disable when dialog is open
+            if (isEditItemOpen || document.querySelector('[role="dialog"]')) return;
+
             const isMac = navigator.platform.toUpperCase().includes('MAC');
+            const totalPanels = 1 + selectedBags.length;
+
+            // Ctrl/Cmd+Z — undo
             if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 'z') {
                 e.preventDefault();
                 if (canUndo) await handleUndo();
+                return;
+            }
+
+            switch (e.key) {
+                case 'Tab': {
+                    e.preventDefault();
+                    const next = e.shiftKey
+                        ? (focusedPanelIndex - 1 + totalPanels) % totalPanels
+                        : (focusedPanelIndex + 1) % totalPanels;
+                    setFocusedPanelIndex(next);
+                    setSelectedItemId(null);
+                    // Sync activeBagIndex
+                    if (next > 0) setFocusedPanelIndex(next);
+                    break;
+                }
+                case 'ArrowDown': {
+                    e.preventDefault();
+                    const panelItems = getFocusedPanelItems();
+                    if (panelItems.length === 0) break;
+                    if (selectedItemId === null) {
+                        setSelectedItemId(panelItems[0].id);
+                    } else {
+                        const idx = panelItems.findIndex(i => i.id === selectedItemId);
+                        setSelectedItemId(panelItems[(idx + 1) % panelItems.length].id);
+                    }
+                    break;
+                }
+                case 'ArrowUp': {
+                    e.preventDefault();
+                    const panelItems = getFocusedPanelItems();
+                    if (panelItems.length === 0) break;
+                    if (selectedItemId === null) {
+                        setSelectedItemId(panelItems[panelItems.length - 1].id);
+                    } else {
+                        const idx = panelItems.findIndex(i => i.id === selectedItemId);
+                        setSelectedItemId(panelItems[(idx - 1 + panelItems.length) % panelItems.length].id);
+                    }
+                    break;
+                }
+                case 'Enter': {
+                    e.preventDefault();
+                    if (selectedItemId === null) break;
+                    const allItems = [...items, ...bagItems];
+                    const item = allItems.find(i => i.id === selectedItemId);
+                    if (!item) break;
+
+                    if (focusedPanelIndex === 0) {
+                        // Available → move to active bag
+                        if (activeBagIndex === null) break;
+                        await moveItem(item, activeBagIndex, 0);
+                    } else {
+                        // Bag → move back to available
+                        await moveItem(item, null);
+                    }
+                    setSelectedItemId(null);
+                    break;
+                }
+                case 'Delete':
+                case 'Backspace': {
+                    if (focusedPanelIndex === 0) break;
+                    if (selectedItemId === null) break;
+                    e.preventDefault();
+                    const item = bagItems.find(i => i.id === selectedItemId);
+                    if (!item) break;
+                    await moveItem(item, null);
+                    setSelectedItemId(null);
+                    break;
+                }
+                case 'e':
+                case 'E': {
+                    if (selectedItemId === null) break;
+                    const allItems = [...items, ...bagItems];
+                    const item = allItems.find(i => i.id === selectedItemId);
+                    if (!item) break;
+                    e.preventDefault();
+                    setSelectedItem(item);
+                    setIsEditItemOpen(true);
+                    break;
+                }
+                case 'a':
+                case 'A': {
+                    e.preventDefault();
+                    // Trigger add item dialog — we need a ref for this
+                    addItemDialogRef.current?.click();
+                    break;
+                }
             }
         };
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [canUndo]);
+    }, [focusedPanelIndex, selectedItemId, selectedBags, activeBagIndex, canUndo, isEditItemOpen, items, bagItems, getFocusedPanelItems]);
 
     useEffect(() => {
         try {
             const saved = localStorage.getItem(storageKey);
             const bags = saved ? JSON.parse(saved) : [];
             setSelectedBags(bags);
-            setActiveBagIndex(bags.length > 0 ? bags.length - 1 : null);
+            setFocusedPanelIndex(bags.length > 0 ? bags.length : null);
         } catch {
             setSelectedBags([]);
-            setActiveBagIndex(null);
+            setFocusedPanelIndex(0);
         }
     }, [storageKey]);
 
@@ -193,8 +290,8 @@ export default function Home() {
 
         setSelectedBags(bags);
         localStorage.setItem(storageKey, JSON.stringify(bags));
-        if (bags.length > 0) setActiveBagIndex(bags.length - 1);
-        else setActiveBagIndex(null);
+        if (bags.length > 0) setFocusedPanelIndex(bags.length);
+        else setFocusedPanelIndex(0);
     };
 
     if (!user) return null;
@@ -291,7 +388,7 @@ export default function Home() {
                 {/* Toolbar */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...bagItems]} />
+                        <AddItemDialog onAdd={addItem} isLoading={false} items={[...items, ...bagItems]} triggerRef={addItemDialogRef} />
                         {/*<Button variant="outline" onClick={() => setSelectedTags([])} disabled={selectedTags.length === 0}>
                             Clear Filters
                         </Button> */}
@@ -331,7 +428,12 @@ export default function Home() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
                     {/* Available items */}
-                    <div className="border-2 border-border rounded-lg p-4 flex flex-col min-h-0 bg-card h-[60vh] lg:h-[calc(100vh-20rem)]">
+                    <div
+                        onClick={() => setFocusedPanelIndex(0)}
+                        className={`border-2 rounded-lg p-4 flex flex-col min-h-0 bg-card h-[60vh] lg:h-[calc(100vh-20rem)] transition-colors ${
+                            focusedPanelIndex === 0 ? 'border-primary' : 'border-border'
+                        }`}
+                    >
                         <ItemsPanel
                             title="Available Items"
                             bagIndex={null}
@@ -353,6 +455,11 @@ export default function Home() {
                                     </Button>
                                 </>
                             }
+                            selectedItemId={selectedItemId}
+                            onItemSelect={(item) => {
+                                setSelectedItemId(item.id);
+                                setFocusedPanelIndex(0);
+                            }}
                         />
                     </div>
 
@@ -372,9 +479,9 @@ export default function Home() {
                                 return (
                                     <div
                                         key={bag.id}
-                                        onClick={() => setActiveBagIndex(bagIndex)}
+                                        onClick={() => setFocusedPanelIndex(bagIndex + 1)}
                                         className={`border-2 rounded-lg p-4 flex flex-col bg-card flex-shrink-0 cursor-default transition-colors ${
-                                            activeBagIndex === bagIndex ? 'border-primary' : 'border-border'
+                                            focusedPanelIndex === bagIndex + 1 ? 'border-primary' : 'border-border'
                                         }`}
                                         style={{ height: selectedBags.length === 1 ? '100%' : '400px' }}
                                     >
@@ -392,6 +499,11 @@ export default function Home() {
                                             onReorder={(reordered) => reorderBag(bagIndex, reordered)}
                                             onDropNewItem={(item, index) => moveItem(item, bagIndex, index)}
                                             onClearAll={() => clearBag(bagIndex)}
+                                            selectedItemId={selectedItemId}
+                                            onItemSelect={(item) => {
+                                                setSelectedItemId(item.id);
+                                                setFocusedPanelIndex(bagIndex + 1);
+                                            }}
                                         />
                                     </div>
                                 );
@@ -406,7 +518,7 @@ export default function Home() {
                     item={selectedItem}
                     items={[...items, ...bagItems]}
                     isOpen={isEditItemOpen}
-                    onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); }}
+                    onClose={() => { setIsEditItemOpen(false); setSelectedItem(null); setSelectedItemId(null); }}
                     onSaveWeight={async (item, newWeight) => { await updateWeight(item, newWeight); }}
                     refetchItems={refetchItems}
                 />

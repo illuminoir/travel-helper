@@ -210,7 +210,7 @@ function parseCSVLine(line: string): string[] {
     return result;
 }
 
-export async function importFromCSV(data: ImportData, presetId: number, clearData: boolean = true): Promise<void> {
+export async function importFromCSV(data: ImportData, presetId: number, clearData: boolean = true, existingItems: TravelItem[] = []): Promise<void> {
     if (clearData) {
         await itemsApi.deleteAll(presetId);
         await tagsApi.deleteAll();
@@ -224,8 +224,25 @@ export async function importFromCSV(data: ImportData, presetId: number, clearDat
 
     if (data.items.length === 0) return;
 
+    // Build a set of existing names (lowercase) for duplicate detection
+    const existingNames = new Set(existingItems.map(i => i.name.toLowerCase()));
+    const usedNames = new Set(existingNames);
+
+    const deduplicatedItems = data.items.map(item => {
+        let name = item.name;
+        if (usedNames.has(name.toLowerCase())) {
+            let counter = 2;
+            while (usedNames.has(`${name} (${counter})`.toLowerCase())) {
+                counter++;
+            }
+            name = `${name} (${counter})`;
+        }
+        usedNames.add(name.toLowerCase());
+        return { ...item, name };
+    });
+
     const { insertedIds } = await itemsApi.batchAdd(
-        data.items.map(item => ({
+        deduplicatedItems.map(item => ({
             name: item.name,
             weight: item.weight,
             presetId: presetId,
@@ -235,7 +252,7 @@ export async function importFromCSV(data: ImportData, presetId: number, clearDat
     );
 
     await Promise.all(
-        data.items.flatMap((item, i) =>
+        deduplicatedItems.flatMap((item, i) =>
             item.tagIds.map(oldTagId => {
                 const newTagId = tagIdMap.get(oldTagId);
                 if (newTagId !== undefined) {

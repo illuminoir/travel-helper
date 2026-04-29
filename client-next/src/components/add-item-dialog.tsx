@@ -19,9 +19,10 @@ interface AddItemDialogProps {
     onAdd: (name: string, weight: number) => Promise<void>;
     isLoading?: boolean;
     items: TravelItem[];
+    triggerRef?: React.Ref<HTMLButtonElement>;
 }
 
-export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
+export function AddItemDialog({ onAdd, isLoading, items, triggerRef }: AddItemDialogProps) {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState('');
     const [weight, setWeight] = useState('');
@@ -85,7 +86,7 @@ export function AddItemDialog({ onAdd, isLoading, items }: AddItemDialogProps) {
         <>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                    <Button className="gap-2 cursor-pointer">
+                    <Button ref={triggerRef} className="gap-2 cursor-pointer">
                         <Plus className="w-4 h-4" />
                         Add Item
                     </Button>

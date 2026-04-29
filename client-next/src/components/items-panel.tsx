@@ -28,6 +28,8 @@ interface ItemsPanelProps {
     onSort: (sort: SortState) => void;
     headerActions?: React.ReactNode;
     tagFilter?: React.ReactNode;
+    selectedItemId?: number | null;
+    onItemSelect?: (item: TravelItem) => void;
 }
 
 export function ItemsPanel({
@@ -46,6 +48,8 @@ export function ItemsPanel({
                                sort,
                                onSort,
                                headerActions,
+                               selectedItemId,
+                               onItemSelect,
                            }: ItemsPanelProps) {
     const { weightUnit } = useWeightUnit();
     const [search, setSearch] = useState('');
@@ -151,7 +155,7 @@ export function ItemsPanel({
         <div
             className={`flex flex-col gap-3 flex-1 min-h-0 rounded-lg transition-colors ${
                 isBagPanel && isDragOverZone && dragItemIndex.current === null ? 'bg-primary/5' : ''
-            }`}
+            }`}  
             onDragEnter={isBagPanel ? handleZoneDragEnter : undefined}
             onDragLeave={isBagPanel ? handleZoneDragLeave : undefined}
             onDragOver={isBagPanel ? handleZoneDragOver : undefined}
@@ -163,16 +167,16 @@ export function ItemsPanel({
                     <h3 className="font-semibold text-lg">{title} ({items.length})</h3>
                     {isBagPanel && (
                         <span className={`text-sm font-medium ${isOverLimit ? 'text-destructive' : 'text-muted-foreground'}`}>
-                            {smartWeight(totalGrams, weightUnit)}
+                                {smartWeight(totalGrams, weightUnit)}
                             {weightLimitGrams !== undefined && weightLimitGrams > 0 && (
                                 <> / {smartWeight(weightLimitGrams, weightUnit)}{isOverLimit && ' ⚠'}</>
                             )}
-                        </span>
+                            </span>
                     )}
                     {isBagPanel && isOverLimit && (
                         <span className="text-sm font-medium text-destructive">
-                            {weightOver} {weightUnit} over the limit
-                        </span>
+                                {weightOver} {weightUnit} over the limit
+                            </span>
                     )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -216,7 +220,9 @@ export function ItemsPanel({
                             draggable={isBagPanel}
                             onDragStart={isBagPanel ? (e) => handleItemDragStart(e, index) : undefined}
                             onDragEnd={isBagPanel ? handleItemDragEnd : undefined}
-                            className="relative mb-2"
+                            className={`relative mb-2 rounded-lg cursor-pointer ${
+                                selectedItemId === item.id ? 'ring-2 ring-primary' : ''
+                            }`}
                         >
                             {isBagPanel && insertIndex === index && (
                                 <div className="absolute -top-1 left-0 right-0 h-0.5 bg-primary rounded-full z-10" />
